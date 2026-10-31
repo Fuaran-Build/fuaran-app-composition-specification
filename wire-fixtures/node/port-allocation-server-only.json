@@ -1,0 +1,1 @@
+{"kind":"appRoot","base":"serverApp","layers":[],"id":"node-port-allocation-server-only","children":[{"kind":"portAllocation","server":13970,"id":"ports","children":[]}]}

@@ -1,0 +1,1 @@
+{"kind":"appRoot","base":"serverApp","layers":[],"id":"extension-unknown-declaration","children":[{"kind":"extensionRef","namespace":"example.vendor","extensionKind":"some-future-thing","fields":[{"name":"zeta","value":"1"},{"name":"alpha","value":"2"}],"id":"unknown","children":[]}]}

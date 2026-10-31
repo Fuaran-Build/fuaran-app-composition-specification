@@ -1,0 +1,351 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://fuaran.com/app-composition/v1/module.schema.json",
+  "title": "Module document node",
+  "description": "MODULE_AUTHORING_WIRE.md sections M3, M5 and M6, at the revision the document's head states. STRUCTURAL ONLY and subordinate to the normative text. What this schema cannot express and the text can: member ORDER (section 4.2 of the composition specification, which section M4.1 adopts), the canonical byte encoding, id uniqueness across the tree, that only the root holds children (section M3.3), that a document carries at most one dataFlow (section M5.11) and at most one authorBody (section M5.12), that an authorBody path is a relative path in the declared-project grammar named once across its four path arrays (section M5.12), that a record-holding handler names a declared type (section M8.2), and the one-label-per-set rule for determinism beyond the enumeration below. It describes what a conformant WRITER emits: the accept vectors (an unknown member, an absent children member) and the reject vectors are deliberately outside it.",
+
+  "$defs": {
+    "id": { "type": "string", "minLength": 1 },
+    "wireBool": { "type": "string", "enum": ["true", "false"] },
+    "bound": { "type": "string" },
+    "case": {
+      "type": "object",
+      "properties": {
+        "case": { "type": "string" },
+        "argument": { "type": "string" }
+      },
+      "required": ["case"]
+    },
+    "toolDefinition": {
+      "type": "object",
+      "properties": {
+        "description": { "type": "string" },
+        "parameters": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "name": { "type": "string" },
+              "type": { "type": "string" },
+              "description": { "type": "string" },
+              "required": { "$ref": "#/$defs/wireBool" },
+              "default": { "type": "string" }
+            },
+            "required": ["name", "type", "description", "required"]
+          }
+        },
+        "emitsActions": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "moduleId": { "type": "string" },
+              "actionKey": { "type": "string" },
+              "description": { "type": "string" },
+              "payloadSchema": { "type": "string" }
+            },
+            "required": ["moduleId", "actionKey", "description"]
+          }
+        },
+        "location": { "type": "string" },
+        "surface": { "type": "string" },
+        "isLiveInterface": { "$ref": "#/$defs/wireBool" },
+        "resultBudget": { "$ref": "#/$defs/case" },
+        "effects": { "type": "array", "items": { "$ref": "#/$defs/case" } },
+        "reads": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": { "module": { "type": "string" }, "entity": { "type": "string" } },
+            "required": ["module", "entity"],
+            "additionalProperties": false
+          }
+        }
+      },
+      "required": ["description", "parameters", "location", "surface", "isLiveInterface", "resultBudget"]
+    },
+    "flowColumn": {
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "type": { "type": "string", "enum": ["int", "string"] }
+      },
+      "required": ["name", "type"]
+    },
+    "flowOrder": {
+      "type": "object",
+      "properties": {
+        "column": { "type": "string" },
+        "direction": { "type": "string", "enum": ["ascending", "descending"] }
+      },
+      "required": ["column", "direction"]
+    },
+    "flowExpr": {
+      "type": "object",
+      "required": ["expr"],
+      "properties": { "expr": { "type": "string", "enum": ["column", "literal", "binary"] } },
+      "allOf": [
+        {
+          "if": { "properties": { "expr": { "const": "column" } } },
+          "then": { "properties": { "name": { "type": "string" } }, "required": ["name"] }
+        },
+        {
+          "if": { "properties": { "expr": { "const": "literal" } } },
+          "then": { "properties": { "int": { "type": "integer" } }, "required": ["int"] }
+        },
+        {
+          "if": { "properties": { "expr": { "const": "binary" } } },
+          "then": {
+            "properties": {
+              "op": { "type": "string", "enum": ["greaterThan", "multiply"] },
+              "left": { "$ref": "#/$defs/flowExpr" },
+              "right": { "$ref": "#/$defs/flowExpr" }
+            },
+            "required": ["op", "left", "right"]
+          }
+        }
+      ]
+    },
+    "flowStep": {
+      "type": "object",
+      "required": ["verb"],
+      "properties": { "verb": { "type": "string", "enum": ["filter", "derive", "groupBy", "sort", "window"] } },
+      "allOf": [
+        {
+          "if": { "properties": { "verb": { "const": "filter" } } },
+          "then": { "properties": { "where": { "$ref": "#/$defs/flowExpr" } }, "required": ["where"] }
+        },
+        {
+          "if": { "properties": { "verb": { "const": "derive" } } },
+          "then": {
+            "properties": { "column": { "type": "string" }, "value": { "$ref": "#/$defs/flowExpr" } },
+            "required": ["column", "value"]
+          }
+        },
+        {
+          "if": { "properties": { "verb": { "const": "groupBy" } } },
+          "then": {
+            "properties": {
+              "keys": { "type": "array", "items": { "type": "string" } },
+              "aggregates": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "name": { "type": "string" },
+                    "fn": { "type": "string", "enum": ["count", "sum", "first"] },
+                    "of": { "type": "string" }
+                  },
+                  "required": ["name", "fn", "of"]
+                }
+              }
+            },
+            "required": ["keys", "aggregates"]
+          }
+        },
+        {
+          "if": { "properties": { "verb": { "const": "sort" } } },
+          "then": {
+            "properties": { "by": { "type": "array", "items": { "$ref": "#/$defs/flowOrder" } } },
+            "required": ["by"]
+          }
+        },
+        {
+          "if": { "properties": { "verb": { "const": "window" } } },
+          "then": {
+            "properties": {
+              "partitionBy": { "type": "array", "items": { "type": "string" } },
+              "orderBy": { "type": "array", "items": { "$ref": "#/$defs/flowOrder" } },
+              "fn": { "type": "string", "enum": ["lag"] },
+              "of": { "type": "string" },
+              "as": { "type": "string" }
+            },
+            "required": ["partitionBy", "orderBy", "fn", "of", "as"]
+          }
+        }
+      ]
+    },
+    "moveTable": {
+      "type": "object",
+      "properties": {
+        "states": { "type": "array", "items": { "type": "string" } },
+        "initial": { "type": "string" },
+        "moves": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "from": { "type": "string" },
+              "to": { "type": "array", "items": { "type": "string" } }
+            },
+            "required": ["from", "to"]
+          }
+        }
+      },
+      "required": ["states", "initial", "moves"]
+    },
+    "handler": {
+      "type": "object",
+      "required": ["kind"],
+      "properties": {
+        "kind": {
+          "type": "string",
+          "enum": [
+            "crudOverDataType",
+            "stateTransition",
+            "aiToolHandler",
+            "notificationEmit",
+            "customHandler",
+            "logicTreeHandler"
+          ]
+        }
+      },
+      "allOf": [
+        {
+          "if": { "properties": { "kind": { "const": "crudOverDataType" } } },
+          "then": { "properties": { "dataType": { "type": "string" } }, "required": ["dataType"] }
+        },
+        {
+          "if": { "properties": { "kind": { "const": "stateTransition" } } },
+          "then": {
+            "properties": {
+              "dataType": { "type": "string" },
+              "field": { "type": "string" },
+              "table": { "$ref": "#/$defs/moveTable" }
+            },
+            "required": ["dataType", "field"]
+          }
+        },
+        {
+          "if": { "properties": { "kind": { "const": "aiToolHandler" } } },
+          "then": {
+            "properties": {
+              "tool": { "type": "string" },
+              "definition": { "$ref": "#/$defs/toolDefinition" },
+              "executor": { "type": "string" }
+            },
+            "required": ["tool"]
+          }
+        },
+        {
+          "if": { "properties": { "kind": { "const": "notificationEmit" } } },
+          "then": { "properties": { "topic": { "type": "string" } }, "required": ["topic"] }
+        },
+        {
+          "if": { "properties": { "kind": { "const": "customHandler" } } },
+          "then": { "properties": { "note": { "type": "string" } }, "required": ["note"] }
+        },
+        {
+          "if": { "properties": { "kind": { "const": "logicTreeHandler" } } },
+          "then": { "properties": { "ref": { "type": "string" } }, "required": ["ref"] }
+        }
+      ]
+    }
+  },
+
+  "type": "object",
+  "required": ["kind", "id"],
+  "properties": {
+    "kind": {
+      "type": "string",
+      "enum": [
+        "moduleRoot",
+        "dataTypeParam",
+        "columnCount",
+        "apiParam",
+        "substrateParam",
+        "queryTargetParam",
+        "handler",
+        "viewBody",
+        "dataTypeDecl",
+        "routeDecl",
+        "dataFlow",
+        "authorBody"
+      ]
+    },
+    "id": { "$ref": "#/$defs/id" },
+    "children": { "type": "array", "items": { "$ref": "#" } }
+  },
+
+  "allOf": [
+    {
+      "if": { "properties": { "kind": { "const": "moduleRoot" } }, "required": ["kind"] },
+      "then": {
+        "properties": {
+          "view": { "type": "string", "minLength": 1 },
+          "viewSpec": { "$ref": "citation.schema.json" },
+          "host": { "type": "string", "enum": ["pure", "readsHost", "writesHost"] },
+          "determinism": {
+            "type": "string",
+            "enum": [
+              "deterministic",
+              "clock",
+              "random",
+              "network",
+              "clock+random",
+              "clock+network",
+              "random+network",
+              "clock+random+network"
+            ]
+          },
+          "namespace": { "type": "string" },
+          "platformVersion": { "type": "string" },
+          "packageId": { "type": "string" },
+          "registration": { "type": "string" }
+        },
+        "required": ["view", "host", "determinism"]
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "kind": { "enum": ["dataTypeParam", "columnCount", "apiParam", "substrateParam", "queryTargetParam"] }
+        },
+        "required": ["kind"]
+      },
+      "then": { "properties": { "bound": { "$ref": "#/$defs/bound" } } }
+    },
+    {
+      "if": { "properties": { "kind": { "const": "handler" } }, "required": ["kind"] },
+      "then": { "properties": { "handler": { "$ref": "#/$defs/handler" } }, "required": ["handler"] }
+    },
+    {
+      "if": { "properties": { "kind": { "const": "viewBody" } }, "required": ["kind"] },
+      "then": { "properties": { "contentHash": { "type": "string" } }, "required": ["contentHash"] }
+    },
+    {
+      "if": { "properties": { "kind": { "const": "dataTypeDecl" } }, "required": ["kind"] },
+      "then": {
+        "properties": { "name": { "type": "string" }, "owner": { "enum": ["author"] } },
+        "required": ["name"]
+      }
+    },
+    {
+      "if": { "properties": { "kind": { "const": "routeDecl" } }, "required": ["kind"] },
+      "then": { "properties": { "route": { "type": "string" } }, "required": ["route"] }
+    },
+    {
+      "if": { "properties": { "kind": { "const": "dataFlow" } }, "required": ["kind"] },
+      "then": {
+        "properties": {
+          "input": { "type": "array", "items": { "$ref": "#/$defs/flowColumn" } },
+          "pipeline": { "type": "array", "items": { "$ref": "#/$defs/flowStep" } }
+        },
+        "required": ["input", "pipeline"]
+      }
+    },
+    {
+      "if": { "properties": { "kind": { "const": "authorBody" } }, "required": ["kind"] },
+      "then": {
+        "properties": {
+          "sources": { "type": "array", "items": { "type": "string", "minLength": 1 } },
+          "shared": { "type": "array", "items": { "type": "string", "minLength": 1 }, "minItems": 1 },
+          "client": { "type": "array", "items": { "type": "string", "minLength": 1 }, "minItems": 1 },
+          "assets": { "type": "array", "items": { "type": "string", "minLength": 1 }, "minItems": 1 },
+          "packages": { "type": "array", "items": { "type": "string", "minLength": 1 } }
+        },
+        "required": ["sources", "packages"]
+      }
+    }
+  ]
+}

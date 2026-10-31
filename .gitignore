@@ -1,0 +1,4 @@
+# Nothing here is generated at build time — the corpus is committed bytes.
+# This file exists so an editor's scratch does not arrive as a fixture.
+*.tmp
+.DS_Store

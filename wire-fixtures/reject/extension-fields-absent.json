@@ -1,0 +1,1 @@
+{"kind":"appRoot","base":"serverApp","layers":[],"id":"reject-extension-fields-absent","children":[{"kind":"extensionRef","namespace":"fuaran.program","extensionKind":"logic-tree","id":"logic","children":[]}]}

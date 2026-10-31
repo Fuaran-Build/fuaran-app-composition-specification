@@ -1,0 +1,1 @@
+{"kind":"appRoot","base":"serverApp","layers":[],"id":"reject-member-type-invalid-fact-table-grain","children":[{"kind":"moduleRef","view":"bareFeliz","factTables":[{"id":"trade.daily","subjects":["store"],"metrics":["revenue"],"grains":[7]}],"id":"Unit","children":[]}]}

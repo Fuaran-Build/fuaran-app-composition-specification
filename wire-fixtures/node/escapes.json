@@ -1,0 +1,1 @@
+{"kind":"appRoot","base":"serverApp","layers":[],"id":"node-escapes","children":[{"kind":"dataType","name":"quote \" backslash \\ tab \t newline \n cr \r unit-sep \u001f slash / café 🗿","id":"escapes","children":[]}]}

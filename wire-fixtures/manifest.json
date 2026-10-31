@@ -1,0 +1,2536 @@
+{
+  "specification": "app-composition-wire",
+  "formatVersion": 1,
+  "families": [
+    "document",
+    "node",
+    "citation",
+    "extension",
+    "accept",
+    "reject",
+    "profile-placement",
+    "kill-and-replay",
+    "partition-and-fold",
+    "attestation-quote",
+    "placement-locality",
+    "incremental-recompute",
+    "module-document",
+    "module-handler",
+    "module-reject",
+    "module-accept"
+  ],
+  "reservedFamilies": [
+    "logic-tree",
+    "composition-rules"
+  ],
+  "reservedFamilyReasons": {
+    "logic-tree": "The vectors that will land when the reserved fuaran.program/logic-tree extension declaration (section 7.4) gains semantics. Reserved, so the vocabulary arrives as a filled declaration rather than as a revision of the format.",
+    "composition-rules": "The vectors for the core refusal classes listed in refusalClassesWithoutVectors below: composition-level rules a decoder alone cannot reach. Reserved rather than filled, because a rule vector nobody's decode path runs would certify by being unreachable."
+  },
+  "profiles": {
+    "core": [
+      "document",
+      "node",
+      "citation",
+      "extension",
+      "accept",
+      "reject"
+    ],
+    "durable-session-host": [
+      "document",
+      "node",
+      "citation",
+      "extension",
+      "accept",
+      "reject",
+      "profile-placement"
+    ],
+    "local-first-host": [
+      "document",
+      "node",
+      "citation",
+      "extension",
+      "accept",
+      "reject",
+      "profile-placement"
+    ],
+    "edge-worker-host": [
+      "document",
+      "node",
+      "citation",
+      "extension",
+      "accept",
+      "reject",
+      "profile-placement"
+    ]
+  },
+  "profileKinds": {
+    "server-app-host": "vocabulary",
+    "durable-session-host": "placement",
+    "local-first-host": "placement",
+    "edge-worker-host": "placement"
+  },
+  "documentProfiles": {
+    "module-authoring": [
+      "module-document",
+      "module-handler",
+      "module-reject",
+      "module-accept"
+    ]
+  },
+  "profileVersions": {
+    "durable-session-host": "1.1",
+    "local-first-host": "1.1",
+    "edge-worker-host": "1.1",
+    "module-authoring": "1.0"
+  },
+  "facetAxes": {
+    "delivery": [
+      "atMostOnce",
+      "atLeastOnce",
+      "exactlyOnceEffective"
+    ],
+    "idempotency": [
+      "idempotent",
+      "idempotentWithStore",
+      "nonIdempotent"
+    ],
+    "restart": [
+      "lostOnRestart",
+      "retriedAfterRestart",
+      "survivesRestart"
+    ],
+    "convergence": [
+      "singleWriter",
+      "convergentFold",
+      "divergentMerge"
+    ],
+    "attestation": [
+      "unattested",
+      "attestedAtLaunch",
+      "attestedWithinWindow"
+    ],
+    "locality": [
+      "unpinned",
+      "regionRouted",
+      "regionSealed"
+    ],
+    "recompute": [
+      "fullOnChange",
+      "rowLocal",
+      "groupLocal"
+    ]
+  },
+  "facetFamilies": {
+    "kill-and-replay": {
+      "exercises": [
+        "delivery",
+        "idempotency",
+        "restart"
+      ],
+      "vectorShape": "A session: a root composition and an ordered list of steps, each an append of a node or a performance of a named operation, each declaring whether its intent is journaled. A kill point names the step the evaluator is terminated during. The expectation carries the post-replay projection's digest and the effect ledger, per performer, as an invocation count and a delivered count.",
+      "passCriteria": "The post-replay projection reproduces the digest byte for byte, the effect ledger matches, and every value the vector declares in demonstrates is supported by the ledger under the section 12.1 discriminator table."
+    },
+    "partition-and-fold": {
+      "exercises": [
+        "convergence"
+      ],
+      "vectorShape": "A base composition and two or more authorship lanes, each an ordered list of ops carrying a Lamport stamp: an append of a node, or a write of one member of one node identified by id. The expectation is either the folded composition's digest or a refusal.",
+      "passCriteria": "The fold applies every op in ascending stamp order, ties broken by lane id in ordinal code-point order, and reproduces the digest. Where two lanes interfere, the fold halts with the named class and produces no composition at all. And a profile declaring convergentFold carries BOTH halves of it in its own scope — at least one passing vector that folds and at least one that halts with fold-conflict — because a holder that folds correctly and resolves interference by taking the later stamp reproduces every folding vector byte for byte, which is the holder section 11.1's second half exists to refuse."
+    },
+    "attestation-quote": {
+      "exercises": [
+        "attestation"
+      ],
+      "vectorShape": "A composition, a relying party's policy, and a quote. The policy carries the measurements it admits and the instant at which it observed the quote — carried rather than read from a clock, so the vector's outcome cannot change overnight. The quote carries an opaque format token, a measurement, the composition digest it is bound to, an optional notAfter ending its validity window, an opaque body, and an integrity value over all of the preceding.",
+      "passCriteria": "The quote's integrity re-derives from its other members; the digest of the composition's canonical bytes equals the quote's bound value; the measurement is one the policy admits; and the quote either carries no notAfter or was observed strictly before it. All four are checked independently and all four are reported, so a reader learns which fact is wrong rather than only that one is. A vector claiming attestedWithinWindow is paired with the same quote observed from outside the window and refused as quote-stale, which is the control that separates a verifier that checks the window from one that ignores it."
+    },
+    "placement-locality": {
+      "exercises": [
+        "locality"
+      ],
+      "vectorShape": "A composition, a placement declaration, and a set of flows. The placement assigns each processing site a region and names the routes that admit a crossing between two of them, each route carrying its basis. A flow names the site data leaves, the site it arrives at, what it carries, and optionally the region the flow itself declares it runs in. The expectation is the region the flow is sealed within, the routes that admitted its crossings, or a refusal.",
+      "passCriteria": "Every site a flow names resolves to a declared region; a flow whose endpoints resolve to different regions is admitted only by a route naming that ordered pair; and a flow's own declared region, where it carries one, agrees with the region its site resolves to. All three are checked independently and all three are reported. A vector claiming regionRouted is paired with the same placement and flows carrying no route and refused as egress-undeclared, and a vector claiming regionSealed is paired with the same composition and flows under a placement that moves one site across a boundary and is refused the same way — one perturbation, read from two directions, and the control for both."
+    },
+    "incremental-recompute": {
+      "exercises": [
+        "recompute"
+      ],
+      "vectorShape": "A composition, the data type its pipeline runs over, a pipeline of row-local, reordering, aggregating, framed and joining steps, a source table, and an edit stream naming its addressing scheme — identity, where an op names a row by its key column's value, or ordinal, where it names a position. The expectation carries the result a full evaluation over the changed source produces, and a footprint triple: what priming over the source cost, what a full evaluation over the CHANGED source would cost, and what advancing the primed evaluation against the edits cost. The middle one is the baseline the refresh has to beat, and it is the only honest one, since the changed source may be the larger table.",
+      "passCriteria": "Applying the edit stream to the source yields the changed source; a full evaluation over it produces the recorded result; advancing the primed evaluation against the same edits produces THAT SAME result, column for column and row for row; and each of the three footprints records the class of work the vector states. The result is a pass criterion with no allowance and the counts are recorded evidence compared as strictly-less-than, because engines legitimately differ in how much they can avoid and an instrument that graded on the counts would be measuring the engine it was written beside. rowsEvaluated counts row evaluations AT STEPS rather than rows, and it is ONE scale: a fullRecompute carries it too, alongside the reason it declined for, so a decline and the full evaluation it fell back to are comparable at all."
+    }
+  },
+  "facetValuesWithoutDiscriminator": [
+    {
+      "axis": "restart",
+      "value": "survivesRestart",
+      "reason": "Section 12.1's replay rule restarts a step or drops it; a value that says in-flight work CONTINUES across the restart needs a third journaling state the rule does not specify. Recorded rather than silently absent, and a profile may not declare a value nothing can exhibit."
+    },
+    {
+      "axis": "convergence",
+      "value": "divergentMerge",
+      "reason": "It is a property of a PAIR of vectors — the same lanes, two arrival orders, two different folds — and the family's pass criteria are stated per vector. Carrying such a pair would also mean publishing an oracle for a hazard no registered profile claims."
+    },
+    {
+      "axis": "attestation",
+      "value": "unattested",
+      "reason": "It is the ABSENCE of evidence, and a family whose vectors are quotes cannot exhibit an absence: a vector carrying no quote is not a vector of that family, and would in any case demonstrate nothing a missing family does not already demonstrate. A profile that attests nothing therefore declares the axis empty with a reason (section 11.4) rather than claiming this value."
+    },
+    {
+      "axis": "locality",
+      "value": "unpinned",
+      "reason": "It is the ABSENCE of a constraint, and a family whose vectors are placement declarations cannot exhibit an absence: a vector declaring no placement is not a vector of this family, and would demonstrate nothing a missing family does not already demonstrate. A profile that pins nothing therefore declares the axis empty with a reason (section 11.4) rather than claiming this value — exactly as one that attests nothing declines `unattested`."
+    }
+  ],
+  "facetProfiles": {
+    "core": [
+      "partition-and-fold"
+    ],
+    "durable-session-host": [
+      "kill-and-replay",
+      "partition-and-fold"
+    ],
+    "local-first-host": [
+      "kill-and-replay",
+      "partition-and-fold"
+    ],
+    "edge-worker-host": [
+      "kill-and-replay",
+      "partition-and-fold",
+      "placement-locality"
+    ]
+  },
+  "facetDeclarations": {
+    "core": {
+      "delivery": {
+        "honoured": [],
+        "note": "A core implementation decodes, stores, diffs, transports and displays a composition; it performs nothing, so it delivers nothing. Empty is the honest declaration and not a gap."
+      },
+      "idempotency": {
+        "honoured": [],
+        "note": "As delivery: there is no operation to repeat."
+      },
+      "restart": {
+        "honoured": [],
+        "note": "As delivery: there is no in-flight work for a restart to be visible to."
+      },
+      "convergence": {
+        "honoured": [
+          "convergentFold"
+        ],
+        "note": "The fold is stated over node identity (section 3.2) and declaration order (section 4.2), both of which are the core's alone — so a store holding one composition from more than one writer can fold without knowing any evaluator's vocabulary. This is a facet claim in the sense of section 11.2 and adds nothing to the decode obligations of section 2.1."
+      },
+      "attestation": {
+        "honoured": [],
+        "note": "A core implementation runs nothing, so there is nothing for an environment to measure and nothing for a quote to be about. Empty is the honest declaration and not a gap — and note it cannot be filled by declaring unattested, which section 11.5 records as having no discriminator."
+      },
+      "locality": {
+        "honoured": [],
+        "note": "A core implementation decodes, stores, diffs, transports and displays a composition; it runs nothing, so there is no processing whose location could be pinned. Empty is the honest declaration and not a gap, and note it cannot be filled by declaring `unpinned`, which section 11.5 records as having no discriminator."
+      },
+      "recompute": {
+        "honoured": [],
+        "note": "A core implementation decodes, stores, diffs, transports and displays a composition; it evaluates nothing behind a registered data type, so there is nothing to recompute and nothing to reuse. Empty is the honest declaration and not a gap — and note it cannot be filled by declaring fullOnChange, which is unlike `unattested` and `unpinned` one axis along: those are absences with no discriminator, where this is a positive statement about an evaluator that does evaluate."
+      }
+    },
+    "durable-session-host": {
+      "delivery": {
+        "honoured": [
+          "atMostOnce",
+          "atLeastOnce",
+          "exactlyOnceEffective"
+        ],
+        "note": "The whole axis, and the third value is the reason this profile is registered separately from `server-app-host` rather than widening it. That profile declines `exactlyOnceEffective` because the store an effective-exactly-once claim rests on is not composed by evaluators of its family; an evaluator of THIS family composes one by construction — the session's own journaled state is the store — so the claim is available here and is demonstrated rather than asserted. The two weaker values are declared too: a step whose intent is never journaled is still lost, and saying so is what keeps the third value legible."
+      },
+      "idempotency": {
+        "honoured": [
+          "idempotent",
+          "idempotentWithStore",
+          "nonIdempotent"
+        ],
+        "note": "As delivery, and for the same reason on the same value: `idempotentWithStore` is a claim about substrate, and this family's substrate is the durable session itself. The corpus carries the repeatable-read control beside the store vector deliberately — the two are indistinguishable in the ledger and are separated only by the dedupe mechanism the vectors carry."
+      },
+      "restart": {
+        "honoured": [
+          "lostOnRestart",
+          "retriedAfterRestart"
+        ],
+        "note": "The same two values `server-app-host` declares, and the ceiling is a limit of the corpus rather than of the family. An evaluator of this family re-attempts journaled work after a reactivation, which is `retriedAfterRestart`; `survivesRestart` — work CONTINUING across the restart rather than being re-attempted — is what a durable placement would most like to claim, and §11.5 forbids declaring it because no family states a discriminator for it. Declining it is therefore a statement about what is currently demonstrable, not about what this family does."
+      },
+      "convergence": {
+        "honoured": [
+          "singleWriter"
+        ],
+        "note": "One session is one authorship stream: the activation is the writer, and divergent streams are refused rather than linearised. That is the same declaration `server-app-host` makes and it is made for a different reason — not that the evaluator is handed a composition value, but that the placement admits exactly one writer per session by construction."
+      },
+      "attestation": {
+        "honoured": [],
+        "note": "An evaluator of this family is hosted in an ordinary process and produces no evidence of what it is executing. Empty with a reason per §11.4, and note it cannot be filled by declaring `unattested`, which §11.5 records as having no discriminator. A measured host is a different placement and would register its own profile."
+      },
+      "locality": {
+        "honoured": [],
+        "note": "As `server-app-host`, and for the same reason: a session's durability is a property of its journal, and its locality is a property of where the journal and the activation sit. This profile states the first and is silent on the second."
+      },
+      "recompute": {
+        "honoured": [],
+        "note": "An evaluator of this family owns a session's state and its journal, and the pipeline behind a registered data type is not something this profile registers a place for — so it has nothing to say about what a change to that data costs to answer again. Empty with a reason per section 11.4, and note it cannot be filled by declaring fullOnChange: that value says an evaluator recomputes everything, not that it evaluates nothing."
+      }
+    },
+    "local-first-host": {
+      "delivery": {
+        "honoured": [
+          "atLeastOnce"
+        ],
+        "note": "An operation lives in its writer's lane before it is presented to anybody, so it is never dropped and a reconnect interrupted before the operation took effect presents it again. atMostOnce is not honoured — an implementation of this family that could lose an operation would be one whose lane is not the record. exactlyOnceEffective is not honoured either, and the ground is the mechanism rather than the outcome: that value requires the repeat to be suppressed BECAUSE something remembered the first attempt, and nothing here remembers anything."
+      },
+      "idempotency": {
+        "honoured": [
+          "idempotent"
+        ],
+        "note": "For a reason that belongs to the fold rather than to the operation: an operation is identified by its lane and its stamp and the fold is a function of the ops a holder has, so presenting one twice is presenting the same op. That is idempotent and not idempotentWithStore — nothing remembered anything — and it is why nonIdempotent is declined in the other direction: an implementation in which re-presenting an operation took effect twice would not be folding, it would be appending."
+      },
+      "restart": {
+        "honoured": [
+          "retriedAfterRestart"
+        ],
+        "note": "An operation is written to the writer's lane before it is acted on, which is what makes the placement local-first rather than merely offline-tolerant, so a restart finds the work still owed and re-attempts it. lostOnRestart is not honoured: there is no in-flight work outside a lane for a restart to drop. survivesRestart — work CONTINUING across the restart — is declined under section 11.5, because no family states a discriminator for it."
+      },
+      "convergence": {
+        "honoured": [
+          "convergentFold"
+        ],
+        "note": "The axis this profile is registered for, and the only one on which the difference between placements is not a matter of degree. Both other placements declare singleWriter — one is handed a composition value, the other admits one writer per session by construction — and neither ground survives a device that must stay usable while it can reach nothing else. Both halves of the value are demonstrated separately, per section 12.2: the folding vectors and their arrival-order pair, and the conflict vector that halts."
+      },
+      "attestation": {
+        "honoured": [],
+        "note": "An evaluator of this family runs on a device its operator controls and produces no evidence of what it is executing — and the honest reading is stronger: a measured environment is precisely what a device that must work while unreachable cannot depend on. Empty with a reason per section 11.4, and note it cannot be filled by declaring unattested, which section 11.5 records as having no discriminator."
+      },
+      "locality": {
+        "honoured": [],
+        "note": "The one profile for which the empty declaration is nearly a joke and is still the correct answer: data on somebody's own device is as local as data gets, and this profile cannot say so, because what a locality claim ranges over is a DECLARED region and a device that goes where its owner goes has none. Saying nothing is the honest reading; claiming a region a placement never declared would be worse than silence."
+      },
+      "recompute": {
+        "honoured": [],
+        "note": "As durable-session-host, and the ground is the same one that makes this placement fold rather than refuse: what an evaluator of this family maintains is a composition assembled from lanes, not a table derived from a data type's pipeline. Empty with a reason per section 11.4."
+      }
+    },
+    "edge-worker-host": {
+      "delivery": {
+        "honoured": [
+          "atMostOnce",
+          "atLeastOnce"
+        ],
+        "note": "A step whose intent is journaled to the platform's durable store before it is performed is re-entered after an eviction; one that is not is dropped, and saying so is what keeps the first value legible. `exactlyOnceEffective` is NOT honoured, and the ground is whose guarantee it would be: that value requires the repeat to be suppressed because something remembered the first attempt, and here the something is the PLATFORM's store, whose dedupe this profile does not specify. `durable-session-host` may claim it because the session's own journal is the store and this profile composes no such thing — it borrows one. A claim resting on a store the profile does not specify is a claim about somebody else's product."
+      },
+      "idempotency": {
+        "honoured": [
+          "idempotent",
+          "nonIdempotent"
+        ],
+        "note": "As delivery, and declined on the same value for the same reason: `idempotentWithStore` is a claim about substrate, and this family's substrate is a durable store the platform supplies and this profile does not describe. A repeat that is safe because the operation simply has no second effect is a property of the operation and is claimable here; a repeat that is safe because something dedupes it is a property of somebody else's store."
+      },
+      "restart": {
+        "honoured": [
+          "lostOnRestart",
+          "retriedAfterRestart"
+        ],
+        "note": "An evicted activation's journaled work is re-attempted by the next one and its unjournaled work is gone. `survivesRestart` — work CONTINUING across the eviction rather than being re-attempted — is declined for the second, independent reason section 11.5 gives: no family states a discriminator for it. The two grounds agreeing is a good sign rather than a redundancy."
+      },
+      "convergence": {
+        "honoured": [
+          "singleWriter"
+        ],
+        "note": "One activation owns a session, and a write presented by a superseded activation is REFUSED rather than interleaved. That is the same value `server-app-host` and `durable-session-host` declare and it is reached a third way: not that the evaluator is handed a composition value, and not that the placement admits one writer per session by construction, but that a runtime which can start a second copy of a session it believed gone is fenced off by an activation the store hands out and every write presents."
+      },
+      "attestation": {
+        "honoured": [],
+        "note": "An evaluator of this family runs in an ordinary worker process and produces no evidence of what it is executing. Empty with a reason per section 11.4, and note it cannot be filled by declaring `unattested`, which section 11.5 records as having no discriminator. A measured edge host is a different placement and would register its own profile — which is exactly the sentence `durable-session-host` writes here, and it is not a copy: the two families are unmeasured for the same reason, and a profile that paraphrased it to look different would be pretending to a distinction."
+      },
+      "locality": {
+        "honoured": [
+          "regionSealed",
+          "regionRouted"
+        ],
+        "note": "The axis that earns this profile a registration of its own. An evaluator of this family runs a session at a named point of presence, so where a session's data is processed is a fact the deployment declares rather than one an operator asserts afterwards — and a flow that would leave the declared region is refused rather than performed. Both values are honoured because they are different postures rather than degrees: `regionSealed` says nothing crosses a boundary at all, and `regionRouted` says a crossing happens only where a named route admits it. `unpinned` is declined, and section 11.5 records why it could not be claimed even by a placement that meant it."
+      },
+      "recompute": {
+        "honoured": [],
+        "note": "An evaluator of this family runs a session at a named point of presence and reduces a composition there; where the data behind a registered data type is evaluated, and what a change to it costs, is a property of the store the platform supplies and this profile does not describe. That is the same boundary this profile draws on idempotencyWithStore, reached the same way: a claim resting on a store the profile does not specify is a claim about somebody else's product. Empty with a reason per section 11.4."
+      }
+    }
+  },
+  "stackRungs": {
+    "composition": {
+      "status": "registered",
+      "obligations": [
+        {
+          "citedSpecification": "app-composition-wire",
+          "version": "1",
+          "corpusFamilies": "this-corpus, profile-scoped: every family the profiles partition above maps to the conformance profile the claim names",
+          "note": "The floor. A headless implementation that reads, stores, diffs, transports or reduces a composition without rendering, federating or carrying a logic vocabulary is fully conformant here and owes nothing above it."
+        }
+      ]
+    },
+    "composition+ui": {
+      "extends": "composition",
+      "status": "registered",
+      "obligations": [
+        {
+          "citedSpecification": "fuaran-ui-specification",
+          "version": "0.2.0",
+          "corpusFamilies": "external: every family that specification's own manifest scopes to the profile claimed there",
+          "note": "What a citation-bearing view binding implies. The identifier is the one compositions already carry in their citations (section 5.4, section 6), inherited rather than chosen."
+        }
+      ]
+    },
+    "composition+logic": {
+      "extends": "composition",
+      "status": "reserved",
+      "obligations": []
+    },
+    "composition+federation": {
+      "extends": "composition",
+      "status": "registered",
+      "obligations": [
+        {
+          "citedSpecification": "federation-seam-wire",
+          "version": "1",
+          "corpusFamilies": "external: every family that specification's own manifest scopes to the profile claimed there",
+          "note": "What a composition reaching an independently-operated deployment implies. The identifier is the one that specification's own corpus declares for itself."
+        }
+      ]
+    }
+  },
+  "reservedRungs": [
+    "composition+logic"
+  ],
+  "reservedRungReasons": {
+    "composition+logic": "The rung that will cite the logic vocabulary a module boundary carries — the subject of the extension pair section 7.4 reserves. Reserved rather than specified, because the vocabulary it would cite has not stabilised and a rung citing a revision that does not exist yet is a claim nothing can discharge. Its obligation set is empty, which is what makes claiming it a refusal rather than a free assertion."
+  },
+  "rungClaimClasses": [
+    {
+      "class": "rung-unclaimed",
+      "grade": "refusal",
+      "condition": "The composition carries a construct whose rung the claim omits — a citation-bearing view binding without composition+ui, a federation capability without composition+federation."
+    },
+    {
+      "class": "rung-unexercised",
+      "grade": "advisory",
+      "condition": "The claim names a rung nothing in the composition exercises. Over-specified rather than wrong: it narrows the eligible hosts and costs nothing else, and refusing it would break a composition whose author deliberately targeted a stronger host than today's contents require."
+    },
+    {
+      "class": "rung-reserved-claimed",
+      "grade": "refusal",
+      "condition": "The claim names a reserved rung. A reserved rung obliges nothing, so a claim to it is unfalsifiable — section 11.5's rule one level up."
+    }
+  ],
+  "profileRegistries": {
+    "durable-session-host": "../profiles/durable-session-host/registry.json",
+    "local-first-host": "../profiles/local-first-host/registry.json",
+    "edge-worker-host": "../profiles/edge-worker-host/registry.json",
+    "module-authoring": "../profiles/module-authoring/registry.json"
+  },
+  "profileHomes": {
+    "server-app-host": {
+      "url": "https://github.com/ToolUp-Forge/toolup-forge/tree/main/spec",
+      "note": "Published by the owner of the evaluator whose surface it registers, beside that implementation and versioned with it (section 8.5). A vector whose home is this profile is that profile's own evidence (its token vocabularies, its profile-only kinds, its composition rules) and is published with its document. A vector whose home is core stays with this specification even when it is written in this profile's vocabulary or demonstrates this profile's facet declaration: what it tests is a shape, an encoding, a core refusal or a section 12 family rule, which are this document's."
+    }
+  },
+  "schemas": {
+    "node": "../schemas/v1/node.schema.json",
+    "citation": "../schemas/v1/citation.schema.json",
+    "module": "../schemas/v1/module.schema.json"
+  },
+  "extensionDeclarations": [
+    {
+      "namespace": "fuaran.program",
+      "extensionKind": "logic-tree",
+      "fields": [
+        "ref",
+        "demandDigest"
+      ],
+      "requiredFields": [
+        "ref"
+      ],
+      "maxFieldLength": 256,
+      "status": "reserved"
+    },
+    {
+      "namespace": "fuaran.stack",
+      "extensionKind": "rung-claim",
+      "fields": [
+        "rungs"
+      ],
+      "requiredFields": [
+        "rungs"
+      ],
+      "maxFieldLength": 256,
+      "status": "registered"
+    },
+    {
+      "namespace": "fuaran.placement",
+      "extensionKind": "profile-claim",
+      "fields": [
+        "profiles"
+      ],
+      "requiredFields": [
+        "profiles"
+      ],
+      "maxFieldLength": 256,
+      "status": "registered"
+    }
+  ],
+  "refusalClassesWithoutVectors": [
+    {
+      "class": "root-kind-invalid",
+      "reason": "a composition-level rule: a decoder that reads any node reads a non-root one happily, and the check belongs where the whole document is in hand; the same holds of a module document (MODULE_AUTHORING_WIRE.md section M8.2)"
+    },
+    {
+      "class": "node-id-duplicate",
+      "reason": "requires the whole tree, not one node; a decode path that streams nodes cannot answer it; the same holds of a module document (MODULE_AUTHORING_WIRE.md section M8.2)"
+    },
+    {
+      "class": "port-out-of-range",
+      "reason": "a range rule over a decoded value rather than a decode obligation"
+    },
+    {
+      "class": "extension-field-undeclared",
+      "reason": "requires the declaration registry, which a decoder does not hold; section 7.3 states it as a rule for a reader that has one"
+    },
+    {
+      "class": "extension-field-missing",
+      "reason": "as extension-field-undeclared"
+    },
+    {
+      "class": "extension-field-too-long",
+      "reason": "as extension-field-undeclared"
+    },
+    {
+      "class": "extension-field-duplicate",
+      "reason": "as extension-field-undeclared"
+    },
+    {
+      "class": "extension-not-leaf",
+      "reason": "a containment rule; section 3.4 states it and the composition-rules family is where its vector lands"
+    },
+    {
+      "class": "module-node-not-leaf",
+      "reason": "a module containment rule (MODULE_AUTHORING_WIRE.md section M3.3): a decoder that reads any node reads a non-root one with children happily, and the check belongs where the whole document is in hand - the composition-level root-kind-invalid argument, applied to the module tree"
+    },
+    {
+      "class": "body-address-mismatched",
+      "reason": "a rule over TWO documents (MODULE_AUTHORING_WIRE.md section M7): whether a composition's bodyAddress names the module document presented as that body needs both, and no decode path reads both. The corpus carries the matching pair instead (node/module-ref-body-address cites module-document/cited-view-composed-effect), and the cross-artefact gate recomputes the address"
+    },
+    {
+      "class": "data-flow-duplicate",
+      "reason": "a module rule over the whole tree (MODULE_AUTHORING_WIRE.md section M5.11): a decoder reads each data flow node as well-formed on its own, and only the whole document says there are two - the node-id-duplicate argument, applied to one kind"
+    },
+    {
+      "class": "handler-type-undeclared",
+      "reason": "a module rule over the whole tree (MODULE_AUTHORING_WIRE.md section M8.2): whether a handler's data type is declared needs every dataTypeDecl in the document, and a decode path that reads one node at a time has not seen them; the round-trip vector module-document/identity-and-declarations carries the satisfied case"
+    },
+    {
+      "class": "author-body-duplicate",
+      "reason": "a module rule over the whole tree (MODULE_AUTHORING_WIRE.md section M5.12): a decoder reads each authorBody node as well-formed on its own, and only the whole document says there are two - data-flow-duplicate's argument, applied to the author body"
+    },
+    {
+      "class": "citation-unexpected",
+      "reason": "every vector for this class is evidence of the vocabulary profile it is stated against, and is published with it: server-app-host, at https://github.com/ToolUp-Forge/toolup-forge/tree/main/spec (section 8.5)"
+    }
+  ],
+  "vectors": [
+    {
+      "id": "document/minimal",
+      "family": "document",
+      "profile": "core",
+      "home": "core",
+      "kind": "round-trip",
+      "file": "document/minimal.json",
+      "sha256": "6025113844bc69d9dfaab2c9b6a404e849d32bc4530d43c3c72450d5584070c6",
+      "description": "The smallest complete composition there is: a bare base host, no layers, no children. Every other document vector differs from this one by addition."
+    },
+    {
+      "id": "document/neutral-vocabulary",
+      "family": "document",
+      "profile": "core",
+      "home": "core",
+      "kind": "round-trip",
+      "file": "document/neutral-vocabulary.json",
+      "sha256": "442ee871a416909307f73b68e693600b9f923507e2edc6fcaed93e92a240bb2c",
+      "description": "A whole composition using only core node kinds — the shape a core implementation is complete against. It carries no profile-only kind, which is what makes it the vector that separates a core reader from one that has quietly assumed a profile."
+    },
+    {
+      "id": "node/server-config",
+      "family": "node",
+      "profile": "core",
+      "home": "core",
+      "kind": "round-trip",
+      "file": "node/server-config.json",
+      "sha256": "18061602513a742c21557cec105fbc9b1fa602e3123a9632b06c06945018f01a",
+      "description": "The host-configuration section with no children. It carries no members of its own, so this vector is where a writer that emits an empty members object rather than none diverges."
+    },
+    {
+      "id": "node/companion-selection",
+      "family": "node",
+      "profile": "core",
+      "home": "core",
+      "kind": "round-trip",
+      "file": "node/companion-selection.json",
+      "sha256": "3b0e1cd1e9f13087d2563a8d87f771c0f22d95e3c73b065c9f9b7541b6a5690f",
+      "description": "Two substrate seams bound to named implementations. The slot token is a profile's; the implementation name is opaque to the core and to every profile (section 2.3)."
+    },
+    {
+      "id": "node/data-type",
+      "family": "node",
+      "profile": "core",
+      "home": "core",
+      "kind": "round-trip",
+      "file": "node/data-type.json",
+      "sha256": "832f0f108f9002c5bd948717556b16bf2b2df5ec773b684ed048cddf1b05c799",
+      "description": "A registered data type, by name. The composition records that the type exists and nothing about its contents."
+    },
+    {
+      "id": "node/config-knob",
+      "family": "node",
+      "profile": "core",
+      "home": "core",
+      "kind": "round-trip",
+      "file": "node/config-knob.json",
+      "sha256": "d6dbfa5a9bcb994ded23aa52ebee734f9f53da15346f9cb9c41639276d5ed481",
+      "description": "One setting, key and value both strings. The key space is a profile's; the value is opaque to everyone."
+    },
+    {
+      "id": "node/port-allocation",
+      "family": "node",
+      "profile": "core",
+      "home": "core",
+      "kind": "round-trip",
+      "file": "node/port-allocation.json",
+      "sha256": "44502e1e2d9affd9ad3d815b6fd210353c8c7515c9ffed0850c353cd9e95943e",
+      "description": "A port reservation carrying the optional development-time client band. Paired with the vector below: the pair is what separates an emitter that omits an absent optional from one that has simply never been handed a composition without it."
+    },
+    {
+      "id": "node/port-allocation-server-only",
+      "family": "node",
+      "profile": "core",
+      "home": "core",
+      "kind": "round-trip",
+      "file": "node/port-allocation-server-only.json",
+      "sha256": "1697e838a34858df249714ab94d52fe6c5b907d086de894d9226579d58d5d81f",
+      "description": "The same reservation with no client band. The member is OMITTED, not null and not zero (section 4.5) — the rule every stored content address over a composition depends on."
+    },
+    {
+      "id": "node/connector-ref",
+      "family": "node",
+      "profile": "core",
+      "home": "core",
+      "kind": "round-trip",
+      "file": "node/connector-ref.json",
+      "sha256": "1906f5d2e0bab95705a4a2ee1d24f0d3b492ed6c86f943db078a340dd73b2c15",
+      "description": "Two outbound integrations, one authenticating and rate-limited and one neither. Carries the format's only boolean-valued member in both spellings, as the strings \"true\" and \"false\"."
+    },
+    {
+      "id": "node/module-ref-surface-kinds",
+      "family": "node",
+      "profile": "core",
+      "home": "core",
+      "kind": "round-trip",
+      "file": "node/module-ref-surface-kinds.json",
+      "sha256": "6420dcd2657d9ef173b7770a58529139e89010582016ae69f93d3be2a93d567f",
+      "description": "All three core surface kinds and one reference that declares none. The fourth is the load-bearing one: absence is a posture, and a reader that substitutes a default reproduces the other three perfectly."
+    },
+    {
+      "id": "node/module-ref-fact-tables",
+      "family": "node",
+      "profile": "core",
+      "home": "core",
+      "kind": "round-trip",
+      "file": "node/module-ref-fact-tables.json",
+      "sha256": "260e49e5bc4380fad3e8e6fa0032684a9efcf850f2923d1254bc222d87953b55",
+      "description": "A unit declaring two fact tables beside a unit declaring none. The second is the load-bearing one: an empty declaration is OMITTED, never spelled [], so an emitter that writes the member unconditionally reproduces the first unit perfectly and fails here."
+    },
+    {
+      "id": "node/module-ref-fact-definitions",
+      "family": "node",
+      "profile": "core",
+      "home": "core",
+      "kind": "round-trip",
+      "file": "node/module-ref-fact-definitions.json",
+      "sha256": "bb762efa94204ecc3422d4b8d9af3827f1ca6503d6dacaab5f85f407508523fb",
+      "description": "A unit stating its fact table in full - the definition, a column overriding the table's disclosure and one inheriting it, a metric with every optional member and one with none, a hierarchy with a calendar - beside a unit registering only a hierarchy, its empty tables and metrics OMITTED. The optional members are the load-bearing half: an emitter that writes them unconditionally reproduces the full metric and fails on the bare one."
+    },
+    {
+      "id": "node/module-ref-entities",
+      "family": "node",
+      "profile": "core",
+      "home": "core",
+      "kind": "round-trip",
+      "file": "node/module-ref-entities.json",
+      "sha256": "ea8af20f26cec68e0cc6cd7dda93e51efced097c6c42ed871ce9a526dfa53be0",
+      "description": "A unit's owned entities and its AI exposure (section 5.4): one entity carrying classified fields - an encryption key present and absent, auditOnRead in both string spellings - and one restricted entity under its policy with its empty fields OMITTED, beside a unit stating only an exposure. An emitter that writes the boolean as a JSON literal, or writes fields or entities unconditionally, fails it."
+    },
+    {
+      "id": "node/module-ref-disclosure-policies",
+      "family": "node",
+      "profile": "core",
+      "home": "core",
+      "kind": "round-trip",
+      "file": "node/module-ref-disclosure-policies.json",
+      "sha256": "542cce4844d711923aa137e97135277f5a592067da10309815f303af5ae122b9",
+      "description": "A unit's disclosure policies (section 5.4): one permitting two surfaces and one sealed policy with a contributor scope, its empty permitSurfaces WRITTEN as [] rather than omitted, beside a unit declaring none (its empty member OMITTED). An emitter that omits an empty permitSurfaces, or writes an empty disclosurePolicies, fails it."
+    },
+    {
+      "id": "node/escapes",
+      "family": "node",
+      "profile": "core",
+      "home": "core",
+      "kind": "round-trip",
+      "file": "node/escapes.json",
+      "sha256": "b04a64b51cc05c6c8b320742953906d50038e5578ef38b36c29d69b33ae28b4f",
+      "description": "Every branch of the section 4.3 escape table in one string: quote, backslash, tab, newline, carriage return, a control character with no short escape, an unescaped solidus, a non-ASCII character and one above the Basic Multilingual Plane."
+    },
+    {
+      "id": "node/module-ref-body-address",
+      "family": "node",
+      "profile": "core",
+      "home": "core",
+      "kind": "round-trip",
+      "file": "node/module-ref-body-address.json",
+      "sha256": "342e0d8409a44b7455580e23876d15f093e09592e1a6307b1de3b4146b6ae414",
+      "description": "A module reference that COMMITS to its body by content address, beside one that commits to none. The address is the SHA-256 of the module vector module-document/cited-view-composed-effect, and the gate recomputes it from that vector's bytes (MODULE_AUTHORING_WIRE.md section M7)."
+    },
+    {
+      "id": "node/app-root-display-name",
+      "family": "node",
+      "profile": "core",
+      "home": "core",
+      "kind": "round-trip",
+      "file": "node/app-root-display-name.json",
+      "sha256": "06cb266390b70dbb995a58aa0d4a222cfdf68d633b0301658d526b4a344733f2",
+      "description": "A root stating the human title the application is known by. The member follows layers in declaration order, and every other vector's root states none, so this vector against document/minimal is the pair that separates an emitter that omits an absent displayName from one that writes it unconditionally (section 5.1)."
+    },
+    {
+      "id": "node/app-root-short-name",
+      "family": "node",
+      "profile": "core",
+      "home": "core",
+      "kind": "round-trip",
+      "file": "node/app-root-short-name.json",
+      "sha256": "2d93c5b6498df80140aa56f58d955b3ae18ee5051239c608761d045aab16da82",
+      "description": "A root stating the application's machine name beside its title. The member follows displayName in declaration order, and every vector without a client shell states none, so this vector against document/minimal is the pair that separates an emitter that omits an absent shortName from one that writes it unconditionally (section 5.1)."
+    },
+    {
+      "id": "node/app-root-projects",
+      "family": "node",
+      "profile": "core",
+      "home": "core",
+      "kind": "round-trip",
+      "file": "node/app-root-projects.json",
+      "sha256": "5bb7b09ac0b452d06bedcc303a7d450c0fcf6f278d33f485d8c8ffea07e0900f",
+      "description": "A root declaring two build units no node produces. The member follows shortName in declaration order and its entries keep the order the composition states (the input model lists them unsorted), and every other vector declares none, so this vector against document/minimal is the pair that separates an emitter that omits an absent projects from one that writes it as [] (section 5.1)."
+    },
+    {
+      "id": "citation/pinned",
+      "family": "citation",
+      "profile": "core",
+      "home": "core",
+      "kind": "round-trip",
+      "file": "citation/pinned.json",
+      "sha256": "56a17ab30fc666dd374d15c6bd91822cdf9c6ec1cdfb9ef9c0b33b13f02ddec2",
+      "description": "A module reference citing a specification revision, with the optional corpus digest present. The citation's three members are in declaration order, which is where an emitter that sorts diverges."
+    },
+    {
+      "id": "citation/pinned-no-corpus-head",
+      "family": "citation",
+      "profile": "core",
+      "home": "core",
+      "kind": "round-trip",
+      "file": "citation/pinned-no-corpus-head.json",
+      "sha256": "6a935a59743a3b54d85393f0afb9adbf4e2ab792b8a2bb9d295d8d9df9aee95c",
+      "description": "The same citation without the optional evidence member. Omitted, not null — the omission rule one level in from the node."
+    },
+    {
+      "id": "citation/mixed-bindings",
+      "family": "citation",
+      "profile": "core",
+      "home": "core",
+      "kind": "round-trip",
+      "file": "citation/mixed-bindings.json",
+      "sha256": "b873e0036b8357f25368369c48b7d2125bd3ea5e81fb071019cd863a6501539c",
+      "description": "Three view tokens in one composition: one citation-bearing and cited, two not citation-bearing and carrying nothing. An emitter that appends a pin unconditionally diverges here rather than in somebody's build."
+    },
+    {
+      "id": "extension/reserved-populated",
+      "family": "extension",
+      "profile": "core",
+      "home": "core",
+      "kind": "round-trip",
+      "file": "extension/reserved-populated.json",
+      "sha256": "518431b0d9b0f598f71c4a2eb05ddafb4878b40e462b770b099f4a333da70e91",
+      "description": "The reserved extension declaration carrying only its required field. Populated on purpose: an empty-field extension round-trips through a path that never touches the payload, which certifies nothing about the payload riding opaquely."
+    },
+    {
+      "id": "extension/reserved-with-demand-digest",
+      "family": "extension",
+      "profile": "core",
+      "home": "core",
+      "kind": "round-trip",
+      "file": "extension/reserved-with-demand-digest.json",
+      "sha256": "8a03c1703e5ee1d5ec05158b4baaaedd6e81684a14e34a46d6cfd49ead9b93f4",
+      "description": "Both declared fields, in AUTHORING order — which is not alphabetical order, deliberately. Field order is preserved because round-tripping is an identity law (section 7.2), and this vector is what fails for an emitter that sorts them."
+    },
+    {
+      "id": "extension/unknown-declaration",
+      "family": "extension",
+      "profile": "core",
+      "home": "core",
+      "kind": "round-trip",
+      "file": "extension/unknown-declaration.json",
+      "sha256": "f0824ae24c725cdda2a166c58f259952af53092b111d6de13ec953c8bf553bdc",
+      "description": "An extension under a namespace this specification does not register. A reader holding no declaration must carry it opaquely rather than refuse it (section 7.3), and round-tripping it byte for byte IS the proof of opaque carriage."
+    },
+    {
+      "id": "extension/no-fields",
+      "family": "extension",
+      "profile": "core",
+      "home": "core",
+      "kind": "round-trip",
+      "file": "extension/no-fields.json",
+      "sha256": "671d38cb4b6fabb85d300cef374fe8306ebc6e4628bbfe2d564c4ecae5aab49d",
+      "description": "An extension reference with an empty fields array. Legitimate where the declaration requires none — and distinct from the omitted array, which is a refusal. The pair is the whole of that distinction."
+    },
+    {
+      "id": "extension/rung-claim",
+      "family": "extension",
+      "profile": "core",
+      "home": "core",
+      "kind": "round-trip",
+      "file": "extension/rung-claim.json",
+      "sha256": "23ffa579de898ec2f21fe1176c013587871c8e0a1ddb08e57b5f0af8763de2ad",
+      "description": "The conformance ladder's claim facet: a composition declaring which stack rungs it targets, beside the citation-bearing view binding that obliges the rung it claims. The claim rides the registered fuaran.stack/rung-claim declaration, so it is an ordinary extension reference and no node kind was added to carry it."
+    },
+    {
+      "id": "extension/rung-claim-stacked",
+      "family": "extension",
+      "profile": "core",
+      "home": "core",
+      "kind": "round-trip",
+      "file": "extension/rung-claim-stacked.json",
+      "sha256": "d80de983a40f6aa02244a27fd043845e0508d12f45b2c13481b841e935b7a203",
+      "description": "Two rungs in one claim, comma-separated in the ladder's registration order rather than alphabetically — which is the other order, deliberately. Paired with the vector above: only the pair separates an emitter that preserves the authored spelling from one that sorts, and the spelling is what a content address over the composition folds."
+    },
+    {
+      "id": "accept/unknown-member",
+      "family": "accept",
+      "profile": "core",
+      "home": "core",
+      "kind": "accept",
+      "file": "accept/unknown-member.json",
+      "sha256": "f12fd5ddb886725c73e5863f2b79167b265f8b2a97bb455c168427ea73c211f5",
+      "interpretation": "Read as the module reference it declares. The unrecognised member is ignored and is not re-emitted; the document must not be refused (section 9.3).",
+      "description": "The forward-compatibility vector. An implementation that refuses this will break on the next additive change to the format, and will do so in the field rather than here."
+    },
+    {
+      "id": "accept/children-absent",
+      "family": "accept",
+      "profile": "core",
+      "home": "core",
+      "kind": "accept",
+      "file": "accept/children-absent.json",
+      "sha256": "dca33416ace0bb39b8617858499722d94b3ff145b62e7feb46ed2ce070bb9352",
+      "interpretation": "The data-type node is read as a leaf. A writer emits the empty children array; a reader accepts its absence (section 3.1).",
+      "description": "The one place where what a writer must emit and what a reader must accept deliberately differ."
+    },
+    {
+      "id": "accept/citation-absent-on-bearing-token",
+      "family": "accept",
+      "profile": "core",
+      "home": "core",
+      "kind": "accept",
+      "file": "accept/citation-absent-on-bearing-token.json",
+      "sha256": "7445041c83006055bbe7f872c9ba76a72e29f20452fcd9587175bf6acefb55d9",
+      "interpretation": "The binding is read as citing the reader's own current revision of the cited specification — a migration read, since every such document was written before the citation member existed. Re-encoding makes the implicit citation explicit. A citation that is PRESENT and malformed is refused, so this tolerance covers absence only.",
+      "description": "The migration read. Not byte-stable by design: what a reader re-emits here depends on the reader, which is exactly the implicit claim that citations exist to end."
+    },
+    {
+      "id": "accept/input-escapes",
+      "family": "accept",
+      "profile": "core",
+      "home": "core",
+      "kind": "accept",
+      "file": "accept/input-escapes.json",
+      "sha256": "562ec2dbd8a0060fd0d8edb3760929f1f2ec23d6e49e911d2c4ed8b4d02359d0",
+      "interpretation": "The name decodes to a/bAc followed by U+0008 followed by d. On re-encoding, the solidus is unescaped, the \\u0041 becomes a literal A, and the backspace becomes \\u0008 — the section 4.3 table, which does not carry \\b.",
+      "description": "The escapes a reader must accept and a writer must never emit. A reader that refuses these will refuse documents produced by any ordinary JSON library, which is most of them."
+    },
+    {
+      "id": "reject/document-malformed",
+      "family": "reject",
+      "profile": "core",
+      "home": "core",
+      "kind": "reject",
+      "file": "reject/document-malformed.json",
+      "sha256": "709b51a60940588a02ef12685ae7edcb40e5dfeaeefcb998c908b0563d695aa8",
+      "reject": "document-malformed",
+      "detect": "codec",
+      "description": "Not well-formed JSON. The floor: an implementation that passes this by recovering is not reading this format."
+    },
+    {
+      "id": "reject/node-kind-unknown",
+      "family": "reject",
+      "profile": "core",
+      "home": "core",
+      "kind": "reject",
+      "file": "reject/node-kind-unknown.json",
+      "sha256": "026dec37a2df1ffae9e1b2a6ff2b5ba7fcfac2f94e641df17c89e2e9bdccca6c",
+      "reject": "node-kind-unknown",
+      "detect": "codec",
+      "description": "A kind tag neither the core nor the reader's profile defines. Refused, unlike an unknown EXTENSION, which is carried — the asymmetry is the mechanism working (Appendix B.3), not an inconsistency."
+    },
+    {
+      "id": "reject/node-kind-absent",
+      "family": "reject",
+      "profile": "core",
+      "home": "core",
+      "kind": "reject",
+      "file": "reject/node-kind-absent.json",
+      "sha256": "4c16cc9dc7ad31b0f7becae172042c26f07f077e23117b43bbb50386b915d5a2",
+      "reject": "node-kind-absent",
+      "detect": "codec",
+      "description": "A node object with members but no kind. Well-formed JSON, not a well-formed node — and a reader that guesses the kind from the members has invented a document nobody wrote."
+    },
+    {
+      "id": "reject/node-id-absent",
+      "family": "reject",
+      "profile": "core",
+      "home": "core",
+      "kind": "reject",
+      "file": "reject/node-id-absent.json",
+      "sha256": "bb5df239dbe9b44d086928cf357e3b5f45392b3473c232bf1f34ee715a07e54e",
+      "reject": "node-id-absent",
+      "detect": "codec",
+      "description": "A node with no identity. Synthesising one from tree position is the specific failure section 3.2 exists to forbid: it produces a composition that stops diffing the first time anything moves."
+    },
+    {
+      "id": "reject/node-id-absent-empty",
+      "family": "reject",
+      "profile": "core",
+      "home": "core",
+      "kind": "reject",
+      "file": "reject/node-id-absent-empty.json",
+      "sha256": "33db0ee6c2e48aa59f30f964d1e34ab5803d428de624b6293086437db1f72e9f",
+      "reject": "node-id-absent",
+      "detect": "codec",
+      "description": "An id that is PRESENT and empty. Section 3.2 says an id must be non-empty and the class covers \"a node with no id, or an empty one\", but the vector beside this one exercises only the missing member — and the two are caught by different code: a required-member read answers the first and returns a perfectly good string for the second. A reader that passes only the other vector accepts an unidentified node while reporting an id."
+    },
+    {
+      "id": "reject/member-absent",
+      "family": "reject",
+      "profile": "core",
+      "home": "core",
+      "kind": "reject",
+      "file": "reject/member-absent.json",
+      "sha256": "43563415ceda3032f9806348f2705a028ae1cda11bcf1bbd1e047395b7bf125b",
+      "reject": "member-absent",
+      "detect": "codec",
+      "description": "A module reference with no view member. Required means required; reading it as a default would manufacture a claim the author never made."
+    },
+    {
+      "id": "reject/member-absent-layers",
+      "family": "reject",
+      "profile": "core",
+      "home": "core",
+      "kind": "reject",
+      "file": "reject/member-absent-layers.json",
+      "sha256": "1175449187b4f2ff2257a2f32bf9567253ec96cb70aed54ced7289ef9a2a2515",
+      "reject": "member-absent",
+      "detect": "codec",
+      "description": "The composition ROOT with layers omitted. Section 5.1 makes the member REQUIRED and says in as many words that a bare base \"is emitted as [], not omitted\" — so absence is not a bare base, and a reader that falls through to an empty list decodes a document the format refuses into a meaning nobody wrote. The same defect as a boolean-valued member read leniently, one member over, and the vector beside this one cannot catch it: that one omits a member on a child node, and the fall-through this exercises is on the root's own read."
+    },
+    {
+      "id": "reject/member-type-invalid-surface-kind",
+      "family": "reject",
+      "profile": "core",
+      "home": "core",
+      "kind": "reject",
+      "file": "reject/member-type-invalid-surface-kind.json",
+      "sha256": "78fa8ebc07f56ee6bd45bb8994753a6319d820531719705461f3ca56e47e6b25",
+      "reject": "member-type-invalid",
+      "detect": "codec",
+      "description": "An optional member present and of the wrong type. Absence is a posture; a member of the wrong type is a broken record. A lenient accessor reads both as no value, which is how a surface kind written as a number decodes to a reference that declares nothing."
+    },
+    {
+      "id": "reject/member-type-invalid-view-spec",
+      "family": "reject",
+      "profile": "core",
+      "home": "core",
+      "kind": "reject",
+      "file": "reject/member-type-invalid-view-spec.json",
+      "sha256": "960b26af7f3b8aa3142cda7c93311db75b7c1a266c8e6d958428d314d86645f1",
+      "reject": "member-type-invalid",
+      "detect": "codec",
+      "description": "A citation carried as a formatted string rather than an object. The rendering is readable and is not the wire form; accepting it would make the format's own spelling optional."
+    },
+    {
+      "id": "reject/member-type-invalid-corpus-head",
+      "family": "reject",
+      "profile": "core",
+      "home": "core",
+      "kind": "reject",
+      "file": "reject/member-type-invalid-corpus-head.json",
+      "sha256": "8bfaafc87714d298fa24e0b33470d59133cbb2b0c52e4b365d0167fdf393c6d9",
+      "reject": "member-type-invalid",
+      "detect": "codec",
+      "description": "The same rule one level in: an optional member of the citation object, present and not a string."
+    },
+    {
+      "id": "reject/surface-kind-unknown",
+      "family": "reject",
+      "profile": "core",
+      "home": "core",
+      "kind": "reject",
+      "file": "reject/surface-kind-unknown.json",
+      "sha256": "21c7622c2d62c9b1c845fdf54ee2705026857b9f5a92625f435e4b045a3a15a2",
+      "reject": "surface-kind-unknown",
+      "detect": "codec",
+      "description": "A surface kind outside the three core tokens. This is core vocabulary, not a profile's, so no profile can register a fourth."
+    },
+    {
+      "id": "reject/fact-tables-empty",
+      "family": "reject",
+      "profile": "core",
+      "home": "core",
+      "kind": "reject",
+      "file": "reject/fact-tables-empty.json",
+      "sha256": "bd274b5f4f12704bb88b9023a0406053255961737f1e88058967e4149c97f3e6",
+      "reject": "fact-tables-empty",
+      "detect": "codec",
+      "description": "A factTables member present and empty. 'This unit writes no fact table' has one spelling, the omitted member, so two documents saying it cannot differ in bytes."
+    },
+    {
+      "id": "reject/entities-empty",
+      "family": "reject",
+      "profile": "core",
+      "home": "core",
+      "kind": "reject",
+      "file": "reject/entities-empty.json",
+      "sha256": "e93d66d89ce55ed3b1964bd4c5780778cf49948406ea36c3061086cb7cf2114f",
+      "reject": "entities-empty",
+      "detect": "codec",
+      "description": "An entities member present and empty. 'This unit owns no declared entity' has one spelling, the omitted member."
+    },
+    {
+      "id": "reject/entity-fields-empty",
+      "family": "reject",
+      "profile": "core",
+      "home": "core",
+      "kind": "reject",
+      "file": "reject/entity-fields-empty.json",
+      "sha256": "ae5bbaed99cfd59ddb3fa1da64f96b631323d945f0c53eb9524a70d589c85fe1",
+      "reject": "entity-fields-empty",
+      "detect": "codec",
+      "description": "An owned entity's fields member present and empty. An entity classifying no field omits the member."
+    },
+    {
+      "id": "reject/disclosure-policies-empty",
+      "family": "reject",
+      "profile": "core",
+      "home": "core",
+      "kind": "reject",
+      "file": "reject/disclosure-policies-empty.json",
+      "sha256": "9e3dc4b58a988b3d253b3cc477becc5ba296f315e364e68ecfa370e8609c916c",
+      "reject": "disclosure-policies-empty",
+      "detect": "codec",
+      "description": "A disclosurePolicies member present and empty. 'This unit declares no disclosure policy' has one spelling, the omitted member."
+    },
+    {
+      "id": "reject/member-type-invalid-fact-tables",
+      "family": "reject",
+      "profile": "core",
+      "home": "core",
+      "kind": "reject",
+      "file": "reject/member-type-invalid-fact-tables.json",
+      "sha256": "5f967388558232d17e3d7b66967f6d0e71c13b744a0aaa60386da0afba2a7e18",
+      "reject": "member-type-invalid",
+      "detect": "codec",
+      "description": "factTables written as a single object rather than an array of them. Present and of the wrong type is a broken record, not an absent declaration."
+    },
+    {
+      "id": "reject/member-absent-fact-table-grains",
+      "family": "reject",
+      "profile": "core",
+      "home": "core",
+      "kind": "reject",
+      "file": "reject/member-absent-fact-table-grains.json",
+      "sha256": "93b771565d397f1072975df109888c451d4fa05ceee85830d568d69c679ba683",
+      "reject": "member-absent",
+      "detect": "codec",
+      "description": "A fact table with no grains member. Every fact-table member is REQUIRED; an omitted grain list is not an empty one."
+    },
+    {
+      "id": "reject/member-type-invalid-fact-table-grain",
+      "family": "reject",
+      "profile": "core",
+      "home": "core",
+      "kind": "reject",
+      "file": "reject/member-type-invalid-fact-table-grain.json",
+      "sha256": "629be5f32b785e45d9128402b87423f37c312b5e91064d8ac4ef2e3acf6a4569",
+      "reject": "member-type-invalid",
+      "detect": "codec",
+      "description": "A grain written as a number. The element is a profile token, so a core reader does not judge its value, but it does judge that it is a string."
+    },
+    {
+      "id": "reject/metric-definitions-empty",
+      "family": "reject",
+      "profile": "core",
+      "home": "core",
+      "kind": "reject",
+      "file": "reject/metric-definitions-empty.json",
+      "sha256": "eb22f52803899573fbc4a10c2c3a9653604a7ea676faedaf052a42dcbffbaab7",
+      "reject": "metric-definitions-empty",
+      "detect": "codec",
+      "description": "A metricDefinitions member present and empty. 'This unit registers no metric' has one spelling, the omitted member."
+    },
+    {
+      "id": "reject/subject-definitions-empty",
+      "family": "reject",
+      "profile": "core",
+      "home": "core",
+      "kind": "reject",
+      "file": "reject/subject-definitions-empty.json",
+      "sha256": "abbd40d270afe4bb294f66cdbeef701807e3b7d9c20652cc741a3c32b3e14620",
+      "reject": "subject-definitions-empty",
+      "detect": "codec",
+      "description": "A subjectDefinitions member present and empty. 'This unit registers no subject hierarchy' has one spelling, the omitted member."
+    },
+    {
+      "id": "reject/member-absent-fact-definition-requirement",
+      "family": "reject",
+      "profile": "core",
+      "home": "core",
+      "kind": "reject",
+      "file": "reject/member-absent-fact-definition-requirement.json",
+      "sha256": "36d6777c9df2f652c15de962418d48999f7dc5836cf4a7e4012687210ebb2c82",
+      "reject": "member-absent",
+      "detect": "codec",
+      "description": "A fact-table definition with no requirement member. Every definition member is REQUIRED: an omitted requirement is not an optional table."
+    },
+    {
+      "id": "reject/member-type-invalid-fact-definition-cadence",
+      "family": "reject",
+      "profile": "core",
+      "home": "core",
+      "kind": "reject",
+      "file": "reject/member-type-invalid-fact-definition-cadence.json",
+      "sha256": "84e2fe70ec3307001e3d5e0b29f83514898f024de0723b4f545bd32de435f1f7",
+      "reject": "member-type-invalid",
+      "detect": "codec",
+      "description": "A refresh cadence written as a string. The member is an integer number of seconds, and a number spelled as text is a broken record."
+    },
+    {
+      "id": "reject/member-absent-metric-definition-staleness",
+      "family": "reject",
+      "profile": "core",
+      "home": "core",
+      "kind": "reject",
+      "file": "reject/member-absent-metric-definition-staleness.json",
+      "sha256": "029ec9ef0a25cd7c24730742ab31dbbeae3ed7488d9bc3985f1dee92a054368a",
+      "reject": "member-absent",
+      "detect": "codec",
+      "description": "A metric definition with no staleness member. A metric states how long its values stay fresh; the member is REQUIRED."
+    },
+    {
+      "id": "reject/member-type-invalid-subject-levels",
+      "family": "reject",
+      "profile": "core",
+      "home": "core",
+      "kind": "reject",
+      "file": "reject/member-type-invalid-subject-levels.json",
+      "sha256": "cc4a352cce738f40305f134d889a416dca551aeb53ae9eb99bbb6c5175e9d9f3",
+      "reject": "member-type-invalid",
+      "detect": "codec",
+      "description": "A subject definition whose levels are one string rather than an array of level labels."
+    },
+    {
+      "id": "reject/oauth-kind-unknown",
+      "family": "reject",
+      "profile": "core",
+      "home": "core",
+      "kind": "reject",
+      "file": "reject/oauth-kind-unknown.json",
+      "sha256": "15abcdc0a2e3c644301e04279b8a9fb36e0db1d9b06ab744821bab1a7437bb10",
+      "reject": "oauth-kind-unknown",
+      "detect": "codec",
+      "description": "An authorisation token outside the three core values. Each names an external standard, so this vocabulary is closed for the same reason the surface kinds are."
+    },
+    {
+      "id": "reject/citation-incomplete",
+      "family": "reject",
+      "profile": "core",
+      "home": "core",
+      "kind": "reject",
+      "file": "reject/citation-incomplete.json",
+      "sha256": "c72acdd50ce9b8722f5a7f38df98449861c4cfc64f8b045ccad46c07d0ff3ccd",
+      "reject": "citation-incomplete",
+      "detect": "codec",
+      "description": "A citation naming a specification but not a revision. Refused rather than read leniently: a citation with no revision is the implicit \"whatever is current\" that citations exist to replace, wearing the shape of an explicit one."
+    },
+    {
+      "id": "reject/extension-fields-absent",
+      "family": "reject",
+      "profile": "core",
+      "home": "core",
+      "kind": "reject",
+      "file": "reject/extension-fields-absent.json",
+      "sha256": "f2920386bf4fe6ac903be41343492b2b607050a9eda311f7d18d653277c1f607",
+      "reject": "extension-fields-absent",
+      "detect": "codec",
+      "description": "An extension reference with the fields array omitted. Paired with extension/no-fields: \"carries no fields\" and \"the field list was omitted\" are different claims and only one of them is something an author wrote."
+    },
+    {
+      "id": "reject/number-not-integer",
+      "family": "reject",
+      "profile": "core",
+      "home": "core",
+      "kind": "reject",
+      "file": "reject/number-not-integer.json",
+      "sha256": "c3908fa3a05938ecfb3b98f61be7b3379d4ed3e35048e5e438d9e781c72b335e",
+      "reject": "number-not-integer",
+      "detect": "codec",
+      "description": "A number carrying a fraction. There is no real number in this format, so a reader that widens to a floating type will re-emit this port as 13000.5 or as 13000 depending on nothing the author can see."
+    },
+    {
+      "id": "reject/number-out-of-range",
+      "family": "reject",
+      "profile": "core",
+      "home": "core",
+      "kind": "reject",
+      "file": "reject/number-out-of-range.json",
+      "sha256": "f2f3c46b687071b9fc2e5306f6054c2b9754a8a704a5a47b08d1ebcd454c2040",
+      "reject": "number-out-of-range",
+      "detect": "codec",
+      "description": "An integer beyond the signed 32-bit range. Refused rather than truncated: a truncation produces a plausible port number that is not the one written down."
+    },
+    {
+      "id": "reject/boolean-spelling-invalid",
+      "family": "reject",
+      "profile": "core",
+      "home": "core",
+      "kind": "reject",
+      "file": "reject/boolean-spelling-invalid.json",
+      "sha256": "1e1055668b2deecb1f307b24bd4ee3be863133ec9e446a0ce117326e6a3f6489",
+      "reject": "boolean-spelling-invalid",
+      "detect": "codec",
+      "description": "The format's one boolean-valued member spelled as a JSON literal instead of the string \"true\" (sections 4.5, 5.7). The trap is that a tolerant reader decodes this to FALSE — the opposite of what it says — because a match on the string fails and falls through to a default. Refusing is the only reading that cannot silently invert an author's meaning."
+    },
+    {
+      "id": "reject/boolean-spelling-invalid-audit-on-read",
+      "family": "reject",
+      "profile": "core",
+      "home": "core",
+      "kind": "reject",
+      "file": "reject/boolean-spelling-invalid-audit-on-read.json",
+      "sha256": "3068e23c8c211f7f17136201295640c51bd61ac2e586b3b87e0a03482657186f",
+      "reject": "boolean-spelling-invalid",
+      "detect": "codec",
+      "description": "A classified field's auditOnRead written as the JSON literal true rather than the string (sections 4.5, 5.4). The format's second boolean-valued member is held to the first one's spelling."
+    },
+    {
+      "id": "reject/body-address-malformed",
+      "family": "reject",
+      "profile": "core",
+      "home": "core",
+      "kind": "reject",
+      "file": "reject/body-address-malformed.json",
+      "sha256": "f4b1f7fabc5e3fcbcf4d0772af744afe87fe1717154f24c03288aabf6c9c2080",
+      "reject": "body-address-malformed",
+      "detect": "codec",
+      "description": "A module reference committing to its body by an address in upper case. The digest is the right one; the spelling is not, and two spellings of one address would be two compositions saying one thing in different bytes (MODULE_AUTHORING_WIRE.md section M7)."
+    },
+    {
+      "id": "reject/display-name-blank",
+      "family": "reject",
+      "profile": "core",
+      "home": "core",
+      "kind": "reject",
+      "file": "reject/display-name-blank.json",
+      "sha256": "bbb6c5a0dcca326fc9c73ee14cfed396721fe675a0711109072ea0ddc7ae276a",
+      "reject": "display-name-blank",
+      "detect": "codec",
+      "description": "A root whose displayName is present and consists only of spaces. Absence is how a composition states no title (section 5.1); a blank title is a second spelling of that, and refusing it keeps one spelling for \"none\" — the same argument that refuses an empty factTables."
+    },
+    {
+      "id": "reject/short-name-invalid",
+      "family": "reject",
+      "profile": "core",
+      "home": "core",
+      "kind": "reject",
+      "file": "reject/short-name-invalid.json",
+      "sha256": "987ec425ff5eada1198af0d92b1826df94596701fc9885f3103f434cbe681098",
+      "reject": "short-name-invalid",
+      "detect": "codec",
+      "description": "A root whose shortName carries a space. A machine name is used verbatim as a file name, a build-tool identifier and a package stem (section 5.1), so a value outside the grammar is refused rather than re-spelled - a reader that repaired it would name the application something its author did not write."
+    },
+    {
+      "id": "reject/projects-empty",
+      "family": "reject",
+      "profile": "core",
+      "home": "core",
+      "kind": "reject",
+      "file": "reject/projects-empty.json",
+      "sha256": "b4ee74a5dead77243ea66a16aa8e5e22c9582c8bae354f21f793e1824c073f20",
+      "reject": "projects-empty",
+      "detect": "codec",
+      "description": "A root whose projects member is present and empty. Absence is how a composition declares no build unit (section 5.1); an empty array is a second spelling of that, refused for the reason an empty factTables is."
+    },
+    {
+      "id": "reject/project-path-invalid",
+      "family": "reject",
+      "profile": "core",
+      "home": "core",
+      "kind": "reject",
+      "file": "reject/project-path-invalid.json",
+      "sha256": "fbab4ede8dcb454aa9e55b7ec7f953f4dad33e0250d82ddd233e5dfc2edb3e2b",
+      "reject": "project-path-invalid",
+      "detect": "codec",
+      "description": "A root declaring a project path with a '..' segment. An entry names one file under the application's root on every platform (section 5.1); a path that can climb out of the root names nothing the composition can vouch for, and a reader that collapsed the segment would be building a path its author did not write."
+    },
+    {
+      "id": "reject/project-duplicate",
+      "family": "reject",
+      "profile": "core",
+      "home": "core",
+      "kind": "reject",
+      "file": "reject/project-duplicate.json",
+      "sha256": "9eac83641f6ea9dc73fc15a3582f5dd2efab0d5d9dd79510529c9999f2ae3d63",
+      "reject": "project-duplicate",
+      "detect": "codec",
+      "description": "A root declaring the same project path twice, apart. Each path is named once (section 5.1): an evaluator lists every entry in the solution it builds, and a solution naming one project twice is one no build tool loads, so the repetition is refused rather than silently collapsed."
+    },
+    {
+      "id": "kill-and-replay/lost-in-flight",
+      "family": "kill-and-replay",
+      "profile": "server-app-host",
+      "home": "core",
+      "kind": "hash",
+      "file": "kill-and-replay/lost-in-flight.json",
+      "sha256": "aaf0e475edae67ef364451a4ba5546a6fb47f593e20ad4d9e444c50633fab224",
+      "description": "A performer whose intent is never written down, killed mid-performance and never retried: entered once, delivered never. The loss is the demonstration, and it is what at-most-once delivery means when it is stated as an outcome rather than as a word."
+    },
+    {
+      "id": "kill-and-replay/retried-duplicate",
+      "family": "kill-and-replay",
+      "profile": "server-app-host",
+      "home": "core",
+      "kind": "hash",
+      "file": "kill-and-replay/retried-duplicate.json",
+      "sha256": "180059e807836bc2b764203379e601d17b9b185063fbc971825bc0e359b6ae8d",
+      "description": "The same session with the performer's intent journaled. The replay is owed the work, re-enters it, and nothing dedupes the repeat — so the duplicate is visible in the ledger. Paired with the vector above: the pair is the price of never losing, priced."
+    },
+    {
+      "id": "kill-and-replay/repeatable-read",
+      "family": "kill-and-replay",
+      "profile": "server-app-host",
+      "home": "core",
+      "kind": "hash",
+      "file": "kill-and-replay/repeatable-read.json",
+      "sha256": "b9acf7a36dffd6ec62eb16a2b0140f540543fc00762329323dbc0b5fe7b4ff50",
+      "description": "An operation safe to repeat because repeating it is the same operation, not because anything remembered it. That distinction is the whole of what separates idempotent from idempotentWithStore, and a vector that did not carry the mechanism would let either certify as the other."
+    },
+    {
+      "id": "kill-and-replay/reject-unrecoverable-append",
+      "family": "kill-and-replay",
+      "profile": "server-app-host",
+      "home": "core",
+      "kind": "reject",
+      "file": "kill-and-replay/reject-unrecoverable-append.json",
+      "sha256": "7a493ce8b89c47ef4b5094225d6ca68fd11da459b7e288e563d0afa0f7321c50",
+      "reject": "replay-divergent",
+      "detect": "runtime",
+      "description": "A kill on an append whose intent was never journaled, so the replay cannot reproduce the projection. The obligation is to say so; emitting the shorter composition is the failure, and it is one that looks exactly like success."
+    },
+    {
+      "id": "partition-and-fold/independent-lanes",
+      "family": "partition-and-fold",
+      "profile": "core",
+      "home": "core",
+      "kind": "hash",
+      "file": "partition-and-fold/independent-lanes.json",
+      "sha256": "7b6e6dcdefdeb307d9951690bda0ddd3d66d823c635c23332cb19505ffc9c1e1",
+      "description": "Two lanes appending different nodes to one composition, folded to one result under the total order. The base case: no lane's work is lost and no order is invented."
+    },
+    {
+      "id": "partition-and-fold/arrival-order-immaterial",
+      "family": "partition-and-fold",
+      "profile": "core",
+      "home": "core",
+      "kind": "hash",
+      "file": "partition-and-fold/arrival-order-immaterial.json",
+      "sha256": "d9da27c2f316a94b76566cf4aa03a32af106b0d51327483ea3eb29428a703612",
+      "description": "The same two lanes presented in the other order, folding to the same digest. The control: a fold that simply concatenates in arrival order reproduces either vector alone perfectly, and only the pair separates it from one that computes the order."
+    },
+    {
+      "id": "partition-and-fold/stamp-tie-lane-order",
+      "family": "partition-and-fold",
+      "profile": "core",
+      "home": "core",
+      "kind": "hash",
+      "file": "partition-and-fold/stamp-tie-lane-order.json",
+      "sha256": "edb65da88f9b8a0deba7f7e43f1219e2800d75b27f8b8e720fa1c8fd4590eaeb",
+      "description": "Both ops at one stamp, so only the lane-id tiebreak decides. The node ids are chosen so that ordering by arrival and ordering by content both give the other answer — a tiebreak that is not the specified one fails here rather than on somebody's third machine."
+    },
+    {
+      "id": "partition-and-fold/reject-conflicting-write",
+      "family": "partition-and-fold",
+      "profile": "core",
+      "home": "core",
+      "kind": "reject",
+      "file": "partition-and-fold/reject-conflicting-write.json",
+      "sha256": "05b57f52a9eecba7b11a47ece63124f09946bfd866e72ac08d113aeb3d4dc1b8",
+      "reject": "fold-conflict",
+      "detect": "runtime",
+      "description": "Two lanes writing one member of one node to different values. A total order exists over these ops and is deliberately not used to pick a winner: ordering independent work is what the order is for, and resolving interference with it produces a composition neither author wrote."
+    },
+    {
+      "id": "partition-and-fold/reject-single-writer",
+      "family": "partition-and-fold",
+      "profile": "server-app-host",
+      "home": "core",
+      "kind": "reject",
+      "file": "partition-and-fold/reject-single-writer.json",
+      "sha256": "6bd4822b854f7e3fdaeca780341ed34e4852b855e37b7ab991a29f63304493e6",
+      "reject": "concurrent-authorship-unsupported",
+      "detect": "runtime",
+      "description": "Perfectly foldable lanes, refused, because this evaluator admits one authorship stream and folds nothing. The content is deliberately the independent-lane case: a holder that passes this by folding it has not demonstrated singleWriter, it has demonstrated being something else."
+    },
+    {
+      "id": "attestation-quote/bound-at-launch",
+      "family": "attestation-quote",
+      "profile": "server-app-host",
+      "home": "core",
+      "kind": "hash",
+      "file": "attestation-quote/bound-at-launch.json",
+      "sha256": "816b1a75035e12f70d4ab10ca5232f5b1780ba628a72ec9a03f6e7f1c9bf28e8",
+      "description": "A quote carrying no validity window, binding a composition's identity to the measurement of the environment the run started in. It says what was launched, which is a smaller sentence than what is running now, and is the whole of what attestedAtLaunch means."
+    },
+    {
+      "id": "attestation-quote/fresh-within-window",
+      "family": "attestation-quote",
+      "profile": "server-app-host",
+      "home": "core",
+      "kind": "hash",
+      "file": "attestation-quote/fresh-within-window.json",
+      "sha256": "f98b410b467c341ce7831fb38d296a093aab92361330561929e906420e1427ef",
+      "description": "The same claim inside a declared window, observed strictly before it ends. Paired with the stale vector below, which carries the identical quote observed after it: a verifier that ignores the window reproduces this vector perfectly, so only the pair separates it from one that checks."
+    },
+    {
+      "id": "attestation-quote/reject-stale-quote",
+      "family": "attestation-quote",
+      "profile": "server-app-host",
+      "home": "core",
+      "kind": "reject",
+      "file": "attestation-quote/reject-stale-quote.json",
+      "sha256": "c490a9a1adcb20d8a01dc43f8691feb474d67b93367d22501222da918ef013f1",
+      "reject": "quote-stale",
+      "detect": "runtime",
+      "description": "Nothing about the quote moved; the observation did. The obligation is to refuse it as stale rather than to keep reading it as current — a lapsed quote downgrades to what was LAUNCHED, and an implementation that let it go on answering the other question has stopped checking rather than started trusting."
+    },
+    {
+      "id": "attestation-quote/reject-measurement-outside-policy",
+      "family": "attestation-quote",
+      "profile": "server-app-host",
+      "home": "core",
+      "kind": "reject",
+      "file": "attestation-quote/reject-measurement-outside-policy.json",
+      "sha256": "921f2ca6a1ee097c7ce92b7a5ddf13c999310f4a956a197c4bac54c86069f761",
+      "reject": "measurement-outside-policy",
+      "detect": "runtime",
+      "description": "A perfectly intact, perfectly current quote from an environment the relying party does not admit. The policy is the relying party's: an attester that decided which measurements were acceptable would be certifying itself."
+    },
+    {
+      "id": "attestation-quote/reject-binding-names-another-composition",
+      "family": "attestation-quote",
+      "profile": "server-app-host",
+      "home": "core",
+      "kind": "reject",
+      "file": "attestation-quote/reject-binding-names-another-composition.json",
+      "sha256": "92c9e6fb8ffbb2e037a0dbb1d9a745d4415414c5f50b33d34ce3cff2db1bd0fd",
+      "reject": "binding-mismatched",
+      "detect": "runtime",
+      "description": "A quote that is genuine, current, and about something else. The transplant rather than the forgery: every check on the evidence itself passes, and it still says nothing about the composition it arrived beside."
+    },
+    {
+      "id": "attestation-quote/reject-unverifiable-quote",
+      "family": "attestation-quote",
+      "profile": "server-app-host",
+      "home": "core",
+      "kind": "reject",
+      "file": "attestation-quote/reject-unverifiable-quote.json",
+      "sha256": "b296d82b49b1ce2457f71bc19e807f430ba903747cea5baece02bc673c255967",
+      "reject": "quote-unverifiable",
+      "detect": "runtime",
+      "description": "The body moved after the integrity value was taken, so that value covers content the document no longer carries. An implementation that READ the integrity value rather than re-deriving it passes every other vector in this family and this one too, which is why the family carries it."
+    },
+    {
+      "id": "kill-and-replay/durable-lost-unjournaled",
+      "family": "kill-and-replay",
+      "profile": "durable-session-host",
+      "home": "core",
+      "kind": "hash",
+      "file": "kill-and-replay/durable-lost-unjournaled.json",
+      "sha256": "5e51bdb559b2de0e29e431e5ddeba9a7b734d333503bf09fd1e54fef7c19b977",
+      "description": "A performer whose intent was never written to the journal before it began, killed mid-performance. The reactivated session replays the journal, finds no record that the work was owed, and never re-enters it: entered once, delivered never. A durable placement does not make every step durable, only the ones whose intent was journaled, and declaring the weak values alongside the strong ones is what keeps the strong ones legible."
+    },
+    {
+      "id": "kill-and-replay/durable-journaled-retry-duplicate",
+      "family": "kill-and-replay",
+      "profile": "durable-session-host",
+      "home": "core",
+      "kind": "hash",
+      "file": "kill-and-replay/durable-journaled-retry-duplicate.json",
+      "sha256": "fc45964097ff32690bfa65f5a8687329afa696c0d0c0d972d030a9cc808a6727",
+      "description": "The same shape with the intent journaled and nothing deduping the repeat. The replay is owed the work, re-enters it, and the effect takes twice. Paired with the vector above this is the price of never losing, priced; paired with the one below it is what the store is actually buying."
+    },
+    {
+      "id": "kill-and-replay/durable-store-deduped-once",
+      "family": "kill-and-replay",
+      "profile": "durable-session-host",
+      "home": "core",
+      "kind": "hash",
+      "file": "kill-and-replay/durable-store-deduped-once.json",
+      "sha256": "7841099811d66a6698a8e54c7064fe4c7dee164b752ded83ac416a6059b71fc7",
+      "description": "The claim this profile exists to make, and the value no other registered profile declares. The intent is journaled, the replay re-enters the work, and the repeat is suppressed BECAUSE the session's own durable state remembered the first attempt. The mechanism is carried in the vector rather than inferred, which is exactly what separates this from the repeatable-read control below."
+    },
+    {
+      "id": "kill-and-replay/durable-repeatable-read",
+      "family": "kill-and-replay",
+      "profile": "durable-session-host",
+      "home": "core",
+      "kind": "hash",
+      "file": "kill-and-replay/durable-repeatable-read.json",
+      "sha256": "bad4b67b6fcaf1858b52fb38322b34a74efa2c86d65b676b05232d714dac308c",
+      "description": "An operation safe to repeat because repeating it is the same operation; nothing remembered anything. The control for the vector above: both read as entered twice and took effect once, and only the dedupe mechanism tells them apart."
+    },
+    {
+      "id": "kill-and-replay/durable-reject-unrecoverable-append",
+      "family": "kill-and-replay",
+      "profile": "durable-session-host",
+      "home": "core",
+      "kind": "reject",
+      "file": "kill-and-replay/durable-reject-unrecoverable-append.json",
+      "sha256": "d9cd6e09dd899e4ae59bb66bd11028bb26df362b8b58382fe4b821e439280221",
+      "reject": "replay-divergent",
+      "detect": "runtime",
+      "description": "A kill on an append whose intent was never journaled, so no replay can reproduce the projection. The obligation is to say so; emitting the shorter composition is the failure, and it is the one that looks exactly like success. The family's own falsifier is scoped to this profile rather than inherited on trust."
+    },
+    {
+      "id": "partition-and-fold/durable-reject-concurrent-authorship",
+      "family": "partition-and-fold",
+      "profile": "durable-session-host",
+      "home": "core",
+      "kind": "reject",
+      "file": "partition-and-fold/durable-reject-concurrent-authorship.json",
+      "sha256": "5367e6f2c661795f2ffc0352e17b3ba46106cd6d809927df71ca2c98bd5e1370",
+      "reject": "concurrent-authorship-unsupported",
+      "detect": "runtime",
+      "description": "One session is one authorship stream by construction: the activation is the writer and there is never a second one to fold against. The lanes are deliberately NON-interfering, because a holder refusing a CONFLICTING pair might be refusing the conflict rather than the concurrency, and those are different claims."
+    },
+    {
+      "id": "extension/placement-claim",
+      "family": "extension",
+      "profile": "core",
+      "home": "core",
+      "kind": "round-trip",
+      "file": "extension/placement-claim.json",
+      "sha256": "1f2ec5a4b1c9abbbadf8a2a0198caa3d2bfd53ba65ff7224ae68e8efe0cdc221",
+      "description": "An author naming the evaluator profile that may reduce this composition, riding the registered fuaran.placement/profile-claim declaration. A different partition from the rung claim beside it in this family — that field's values are the ladder's rungs, this one's are the profiles of section 8.5 — which is why it is a second declaration rather than a second field on the first."
+    },
+    {
+      "id": "extension/placement-claim-alternative",
+      "family": "extension",
+      "profile": "core",
+      "home": "core",
+      "kind": "round-trip",
+      "file": "extension/placement-claim-alternative.json",
+      "sha256": "4c2d09fe6e59eec5fe1b6f95527ba5c99ebfcb329874a57ebb8d3412b7f98c56",
+      "description": "Two profiles in one claim, spelled in section 8.5's registration order rather than alphabetically, which is the other order. The set reads as an ALTERNATIVE — an evaluator belongs to one profile family, so naming two says either will do — and the pair with the vector above separates an emitter that preserves the authored spelling from one that sorts."
+    },
+    {
+      "id": "partition-and-fold/local-first-offline-lanes",
+      "family": "partition-and-fold",
+      "profile": "local-first-host",
+      "home": "core",
+      "kind": "hash",
+      "file": "partition-and-fold/local-first-offline-lanes.json",
+      "sha256": "c8d96f292d15345934f5ee7bfc0a5049fd5b0211a003a5c7d17ba73743434dbe",
+      "description": "Two devices, each authoring while it can reach nothing else, folded on reconnect under the total order. The base case for this placement: no device's work is lost and no order is invented. Scoped to this profile rather than inherited from core's identical-shaped vector, because section 11.3 scopes a demonstration to a profile."
+    },
+    {
+      "id": "partition-and-fold/local-first-reconnect-order-immaterial",
+      "family": "partition-and-fold",
+      "profile": "local-first-host",
+      "home": "core",
+      "kind": "hash",
+      "file": "partition-and-fold/local-first-reconnect-order-immaterial.json",
+      "sha256": "53f4377d36a98557d755442220b193cfa48e799897a1e0ca92faecf522da2d36",
+      "description": "The same two lanes reconnecting in the other order, folding to the same digest. Which device reconnects first is the one thing about a partition nobody controls, so a holder whose answer depends on it has not folded — and it reproduces either vector of the pair alone perfectly."
+    },
+    {
+      "id": "partition-and-fold/local-first-reject-conflicting-write",
+      "family": "partition-and-fold",
+      "profile": "local-first-host",
+      "home": "core",
+      "kind": "reject",
+      "file": "partition-and-fold/local-first-reject-conflicting-write.json",
+      "sha256": "ffd17f5c28ed5963ac7aa10ab8c683831bbf9b3a59a767de51c01262835a4adc",
+      "reject": "fold-conflict",
+      "detect": "runtime",
+      "description": "Two devices changed one setting to different values while neither could see the other. A total order exists over these ops and is deliberately not used to pick a winner: resolving interference with it produces a composition neither author wrote, silently, with a digest that reproduces on every machine. This is the half of convergentFold that a correct-looking fold passes without."
+    },
+    {
+      "id": "kill-and-replay/local-first-resend-after-reconnect",
+      "family": "kill-and-replay",
+      "profile": "local-first-host",
+      "home": "core",
+      "kind": "hash",
+      "file": "kill-and-replay/local-first-resend-after-reconnect.json",
+      "sha256": "2fe7e5e5e61a82575fd17b19d0df81f018028245a1ee132eeb43d4a2196cef41",
+      "description": "The delivery, idempotency and restart values of this placement in one session, because they are one mechanism seen three ways: the operation is in its writer's lane before it is presented, so the interrupted presentation is owed and re-entered rather than dropped, and it takes effect once because presenting an op the fold already has is presenting the same op — dedupe repeatable, deliberately not store."
+    },
+    {
+      "id": "kill-and-replay/local-first-reject-unrecoverable-append",
+      "family": "kill-and-replay",
+      "profile": "local-first-host",
+      "home": "core",
+      "kind": "reject",
+      "file": "kill-and-replay/local-first-reject-unrecoverable-append.json",
+      "sha256": "712223a459d133bf017d1b2be81fef455b4078982e5ee77b5eb84b4a3cef17f1",
+      "reject": "replay-divergent",
+      "detect": "runtime",
+      "description": "The family's own falsifier, scoped to this profile rather than inherited on trust, and it matters more here than on either other placement: an operation that never reached a lane cannot be recovered from one, and a device that carried on with the gap would present a composition that folds perfectly against every peer and is missing something nobody can name."
+    },
+    {
+      "id": "kill-and-replay/edge-lost-unjournaled",
+      "family": "kill-and-replay",
+      "profile": "edge-worker-host",
+      "home": "core",
+      "kind": "hash",
+      "file": "kill-and-replay/edge-lost-unjournaled.json",
+      "description": "An eviction during a step whose intent never reached the durable store. The work is gone and nothing records that it was owed — the honest weak half of this placement's delivery declaration.",
+      "sha256": "0865e915f8b98c5df9de11625e8bd38450bdf6d215f97e59004d0163c64360b0"
+    },
+    {
+      "id": "kill-and-replay/edge-journaled-retry-duplicate",
+      "family": "kill-and-replay",
+      "profile": "edge-worker-host",
+      "home": "core",
+      "kind": "hash",
+      "file": "kill-and-replay/edge-journaled-retry-duplicate.json",
+      "description": "An eviction during a step whose intent was journaled first. The next activation re-enters it and the performer takes it twice, which is what at-least-once costs when nothing dedupes.",
+      "sha256": "6cfb40a2bf3b20d24106c322b5d80637c8d1bc5c9deb7f0783a8701c362ea369"
+    },
+    {
+      "id": "kill-and-replay/edge-repeatable-read",
+      "family": "kill-and-replay",
+      "profile": "edge-worker-host",
+      "home": "core",
+      "kind": "hash",
+      "file": "kill-and-replay/edge-repeatable-read.json",
+      "description": "The same eviction over an operation that simply has no second effect. Twice invoked, once delivered, and nothing remembered anything — the control that separates an idempotent operation from a deduped one.",
+      "sha256": "7869e9562b038efc3d9867aa048aa7e1bf7926f35a8cbbbad03ac0ca1c3608f1"
+    },
+    {
+      "id": "partition-and-fold/edge-reject-concurrent-authorship",
+      "family": "partition-and-fold",
+      "profile": "edge-worker-host",
+      "home": "core",
+      "kind": "reject",
+      "file": "partition-and-fold/edge-reject-concurrent-authorship.json",
+      "description": "Two activations of one session presenting divergent authorship. The superseded one is fenced out rather than interleaved, which is this placement's ground for single-writer.",
+      "reject": "concurrent-authorship-unsupported",
+      "detect": "runtime",
+      "sha256": "432ea93fb46207a25271d72ea3935b5aca693912d70e9b406781433e6a14aea6"
+    },
+    {
+      "id": "placement-locality/edge-sealed-in-region",
+      "family": "placement-locality",
+      "profile": "edge-worker-host",
+      "home": "core",
+      "kind": "hash",
+      "file": "placement-locality/edge-sealed-in-region.json",
+      "description": "Every site a flow touches processes in one declared region, so nothing the flow carries crosses a boundary at all. The strongest statement this axis can make, and the one worth making.",
+      "sha256": "cc93143ac35ee5f5418821045eb12db5f6e455832c690825d233f3827f259e29"
+    },
+    {
+      "id": "placement-locality/edge-routed-across-boundary",
+      "family": "placement-locality",
+      "profile": "edge-worker-host",
+      "home": "core",
+      "kind": "hash",
+      "file": "placement-locality/edge-routed-across-boundary.json",
+      "description": "A flow whose endpoints sit in different regions, admitted by a route naming that ordered pair and carrying its basis. Paired with the reject vector below, which is the same placement with the route taken away.",
+      "sha256": "1286e07cf9048a505077ca04a310aa5895f1835edcb56744b62a5f49e851b10c"
+    },
+    {
+      "id": "placement-locality/edge-reject-undeclared-egress",
+      "family": "placement-locality",
+      "profile": "edge-worker-host",
+      "home": "core",
+      "kind": "reject",
+      "file": "placement-locality/edge-reject-undeclared-egress.json",
+      "description": "Silent egress: the same flows crossing the same boundary with no route admitting the pair. One perturbation serving as the control for both positive vectors — it is the routed vector without its route, and the sealed vector with one site moved across a border.",
+      "reject": "egress-undeclared",
+      "detect": "runtime",
+      "sha256": "0c33d96cff8e46cce831640d5a7af304339c1d935bd3d5d301496568ab5bc5a0"
+    },
+    {
+      "id": "placement-locality/edge-reject-unplaced-site",
+      "family": "placement-locality",
+      "profile": "edge-worker-host",
+      "home": "core",
+      "kind": "reject",
+      "file": "placement-locality/edge-reject-unplaced-site.json",
+      "description": "A flow naming a site the placement declares no region for. The term is unresolved, so nothing is proved — an unplaced site is refused rather than read as local, because the one site nobody thought about is otherwise the one that certifies clean.",
+      "reject": "region-undeclared",
+      "detect": "runtime",
+      "sha256": "cdaac2c703d39ed96dec923a5dcfdfa42f82d39ff0b9d2dd41f8122deb810846"
+    },
+    {
+      "id": "placement-locality/edge-reject-pin-contradicts-placement",
+      "family": "placement-locality",
+      "profile": "edge-worker-host",
+      "home": "core",
+      "kind": "reject",
+      "file": "placement-locality/edge-reject-pin-contradicts-placement.json",
+      "description": "A flow declaring a region other than the one its site resolves to. One of the two is out of date and nothing in the vector says which, so neither is preferred and the disagreement itself is the refusal.",
+      "reject": "pin-mismatched",
+      "detect": "runtime",
+      "sha256": "d111be71efda7468d8bff0b52b18ac894e3644c21b6059b108b8abb23d1c345b"
+    },
+    {
+      "id": "incremental-recompute/point-edit-row-local",
+      "family": "incremental-recompute",
+      "profile": "server-app-host",
+      "home": "core",
+      "kind": "hash",
+      "file": "incremental-recompute/point-edit-row-local.json",
+      "description": "One cell of one row changed, over a pipeline every step of which is row-local. The refresh re-evaluates the named row at each step it reaches and carries every other row's value; the full evaluation beside it is what that costs when nothing is carried. Paired with the ordinal vector below, which is this scenario re-addressed and nothing else.",
+      "sha256": "79873d91279e34c836038ef144d9f19747325faf807b3b10382bdcdcd5eee822"
+    },
+    {
+      "id": "incremental-recompute/bulk-edit-row-local",
+      "family": "incremental-recompute",
+      "profile": "server-app-host",
+      "home": "core",
+      "kind": "hash",
+      "file": "incremental-recompute/bulk-edit-row-local.json",
+      "description": "Two rows appended and one removed in a single edit stream, over the same pipeline. A removed row is evaluated by nothing — it is carried out of the result rather than recomputed — which is why the refresh's count is not the number of ops, and why the full evaluation it is measured against is the larger table rather than the original one.",
+      "sha256": "887741b93da957d72c2ad4d2b2498b0d44598a2ad3cee0910fbc2dde783802b2"
+    },
+    {
+      "id": "incremental-recompute/chain-edit-group-local",
+      "family": "incremental-recompute",
+      "profile": "server-app-host",
+      "home": "core",
+      "kind": "hash",
+      "file": "incremental-recompute/chain-edit-group-local.json",
+      "description": "A change to a grouping key, over a row-local prefix and a final aggregate. It reaches the aggregate through the steps in front of it and disturbs two groups — the one it left and the one it joined — while the third is carried, which is the whole of what maintaining groups means.",
+      "sha256": "155a920af5440029e6b3c4e1ab1211591e3e3df941bbbf57962e85c5df60373b"
+    },
+    {
+      "id": "incremental-recompute/sort-merges-in-order",
+      "family": "incremental-recompute",
+      "profile": "server-app-host",
+      "home": "core",
+      "kind": "hash",
+      "file": "incremental-recompute/sort-merges-in-order.json",
+      "description": "The same edit against a pipeline whose second step reorders. A sort computes nothing for a row — it emits that row's own cells in a different place — and a place is recoverable by merging the named rows into the order the previous evaluation already produced, so the delta propagates through it. One row-evaluation where the full evaluation beside it costs six.",
+      "sha256": "0367bfce5cd4189a2dcb1d3d21209773590ec4ebb2480d2ae18f0add0ebdcdcc"
+    },
+    {
+      "id": "incremental-recompute/window-declines-in-full",
+      "family": "incremental-recompute",
+      "profile": "server-app-host",
+      "home": "core",
+      "kind": "hash",
+      "file": "incremental-recompute/window-declines-in-full.json",
+      "description": "The same edit again, against a step that computes a value for a row from other rows. A window's frame is a neighbourhood of the row in its partition's order, so the rows whose frames the named row sits in are exactly the rows nobody named and there is nothing to propagate. The evaluator declines and says so, naming the verb; the prime beside it does not, because a prime evaluates everything whatever the plan says.",
+      "sha256": "e8b7f3364a69735472b5f40c8ea22441b8688b52db643ec4ac0ede0a23a62930"
+    },
+    {
+      "id": "incremental-recompute/join-declines-in-full",
+      "family": "incremental-recompute",
+      "profile": "server-app-host",
+      "home": "core",
+      "kind": "hash",
+      "file": "incremental-recompute/join-declines-in-full.json",
+      "description": "A row's key moved out of a joined relation, over a filtering join that emits each left row at most once and unchanged. The decline is therefore not about the shape of the output: the verdict for a row reads a relation the edit stream describes nothing about, so nothing says the verdicts cached for the rows it did not name still hold.",
+      "sha256": "1f0049a2f9308849d39253c45dd8175831a9172009e63fe0961241648b6cf3d0"
+    },
+    {
+      "id": "incremental-recompute/ordinal-declines-in-full",
+      "family": "incremental-recompute",
+      "profile": "server-app-host",
+      "home": "core",
+      "kind": "hash",
+      "file": "incremental-recompute/ordinal-declines-in-full.json",
+      "description": "The point-edit scenario re-addressed by position. The composition, the pipeline, the source and the row named are all unchanged; only the addressing scheme moved, and the evaluator declines because a cache keyed by position is invalidated wholesale by any insert. This is the control for the row-local vector: an evaluator that read the ops and ignored the scheme reproduces that one perfectly.",
+      "sha256": "66a1a3e4a359542365c861eb82f98c2a9d3ddded94b4857103576d7d7afc02a0"
+    },
+    {
+      "id": "module-document/empty-root",
+      "family": "module-document",
+      "profile": "module-authoring",
+      "home": "core",
+      "kind": "round-trip",
+      "file": "module-document/empty-root.json",
+      "sha256": "8a380208c59716031e25d659109466c48ea4ac9bae9a191ce463b63a69e6704e",
+      "description": "The smallest module document there is: a root and nothing under it. Every other module vector differs from it by addition."
+    },
+    {
+      "id": "module-document/every-parameter",
+      "family": "module-document",
+      "profile": "module-authoring",
+      "home": "core",
+      "kind": "round-trip",
+      "file": "module-document/every-parameter.json",
+      "sha256": "71149f76ee6aee50e239fedeafe7f056a750c6fc5149b00cb2bf7881b5d281c1",
+      "description": "Every parameter kind, open and bound, and a view body. An open hole OMITS its bound member, so this is the vector a writer that emits an empty or null bound diverges on."
+    },
+    {
+      "id": "module-document/cited-view-composed-effect",
+      "family": "module-document",
+      "profile": "module-authoring",
+      "home": "core",
+      "kind": "round-trip",
+      "file": "module-document/cited-view-composed-effect.json",
+      "sha256": "24e4aecf28293a125eb1a107b0aa1f61945e8111647f7198882448f9a029916b",
+      "description": "A citation-bearing view with its citation, and a composed determinism set spelled by its one canonical label. The composition vector node/module-ref-body-address cites THIS document by content address, and the gate recomputes that address from these bytes."
+    },
+    {
+      "id": "module-document/identity-and-declarations",
+      "family": "module-document",
+      "profile": "module-authoring",
+      "home": "core",
+      "kind": "round-trip",
+      "file": "module-document/identity-and-declarations.json",
+      "sha256": "38d3443a478c64206785e5554f3195a9d2f995cd2f071588cfe2601071253170",
+      "description": "Draft 0.2's standalone document: the unit's namespace and platform version on the root, two declared data types, a claimed route, bound parameters, and a CRUD handler over a DECLARED type. Its derived signature (section M10) provides two data types and a route and needs a substrate, a query target and the one data type it binds without declaring."
+    },
+    {
+      "id": "module-document/data-flow",
+      "family": "module-document",
+      "profile": "module-authoring",
+      "home": "core",
+      "kind": "round-trip",
+      "file": "module-document/data-flow.json",
+      "sha256": "d76342142bca2e8ce6faacd65219d91bc7c8332995e6931896ebd29dc0263804",
+      "description": "A data flow using every verb, expression form and closed token section M5.11 registers, in the author's order, with an aggregate list and a window. The root names its namespace and no platform version, so each optional identity member is present once and absent once across the 0.2 vectors."
+    },
+    {
+      "id": "module-document/data-flow-empty-pipeline",
+      "family": "module-document",
+      "profile": "module-authoring",
+      "home": "core",
+      "kind": "round-trip",
+      "file": "module-document/data-flow-empty-pipeline.json",
+      "sha256": "935103453f71df03a082c208ea4d11e2fc2a51297a7beafbb3384969a20e6bed",
+      "description": "A data flow whose pipeline is the empty array: a value, not an absence (section M5.11). A writer that omits [] or a reader that treats it as missing diverges here."
+    },
+    {
+      "id": "module-document/author-body",
+      "family": "module-document",
+      "profile": "module-authoring",
+      "home": "core",
+      "kind": "round-trip",
+      "file": "module-document/author-body.json",
+      "sha256": "2d9a940f5dd7b1217a159ade1f44f14d444908d78d70a2e8bd421b77a5fb73e8",
+      "description": "Draft 0.3's author body (section M5.12): a unit with a multi-segment namespace, no declared data type and two escapes sharing one body of four sources in compile order, referencing two packages. Members typed out of order; the encoder restores the declared order."
+    },
+    {
+      "id": "module-document/author-body-no-sources",
+      "family": "module-document",
+      "profile": "module-authoring",
+      "home": "core",
+      "kind": "round-trip",
+      "file": "module-document/author-body-no-sources.json",
+      "sha256": "244573cb0c68e6ea9a7348b13f384ae25c3110f121c414b898e8ae481409e3a7",
+      "description": "An author body whose sources are the empty array: a value, not an absence (section M5.12). A writer that omits [] or a reader that treats it as missing diverges here."
+    },
+    {
+      "id": "module-document/distinct-identities",
+      "family": "module-document",
+      "profile": "module-authoring",
+      "home": "core",
+      "kind": "round-trip",
+      "file": "module-document/distinct-identities.json",
+      "sha256": "8aa12ea210346a2837957ecba48ba5077d0358027781e7eb6ae25c1502cdbfba",
+      "description": "Draft 0.4's three identities (section M5.1): a unit distributed as one package, written in another namespace and registered under a third name, each stated because none is the namespace's default. Members typed out of order; the encoder restores the declared order, the 0.2 identity first."
+    },
+    {
+      "id": "module-document/author-tiers",
+      "family": "module-document",
+      "profile": "module-authoring",
+      "home": "core",
+      "kind": "round-trip",
+      "file": "module-document/author-tiers.json",
+      "sha256": "de9ddf2e9de8dc86668ba9095427889aee03d72f76b169cb2d1f413fcced38f2",
+      "description": "Draft 0.4's owned types and tiered author body (sections M5.9 and M5.12): two data types the author body defines, the escapes that register them, and a body with a shared, a server and a client tier and the client's assets. Members typed out of order; the encoder writes sources, shared, client, assets, packages."
+    },
+    {
+      "id": "module-document/real-module-ledger",
+      "family": "module-document",
+      "profile": "module-authoring",
+      "home": "core",
+      "kind": "round-trip",
+      "file": "module-document/real-module-ledger.json",
+      "sha256": "dd714b677103991dd03303ddc3046a6affa9d83f786af5e90c308fe0dadaab01",
+      "description": "The first real module the profile was promoted on (section M2), its names made neutral and its shape kept: three routes, two escapes and a nine-source author body, with no declared data type and no package id. Every handler is the escape, which is section M2 step 3's record. Members typed out of order."
+    },
+    {
+      "id": "module-document/real-module-category",
+      "family": "module-document",
+      "profile": "module-authoring",
+      "home": "core",
+      "kind": "round-trip",
+      "file": "module-document/real-module-category.json",
+      "sha256": "34072148605fc5623707c99b470a58577362132ddff2d6f873bb811897ebb67d",
+      "description": "The second real module the profile was promoted on (section M2), its names made neutral and its shape kept: two data types the author body owns, each read by an escape, two model-facing tools whose executors are code, two bound substrates, a remote interface composed in code, a view body and a tiered author body. Every handler is the escape. Members typed out of order."
+    },
+    {
+      "id": "module-handler/crud-over-data-type",
+      "family": "module-handler",
+      "profile": "module-authoring",
+      "home": "core",
+      "kind": "round-trip",
+      "file": "module-handler/crud-over-data-type.json",
+      "sha256": "7956ce0c02469a3c8699efcc70da0b3d5395e0e8e3d5836e5a7515db44fd3eee",
+      "description": "CRUD over a data type: one member."
+    },
+    {
+      "id": "module-handler/state-transition-without-table",
+      "family": "module-handler",
+      "profile": "module-authoring",
+      "home": "core",
+      "kind": "round-trip",
+      "file": "module-handler/state-transition-without-table.json",
+      "sha256": "ffdb8745cb0cdb32f9be10d3c95e30621a105f3277f8531a8ad3b7d70c4a92b1",
+      "description": "A transition that declares no legal-move table. Representable so that an evaluator can refuse it by name rather than reduce it to a transition permitting any move."
+    },
+    {
+      "id": "module-handler/state-transition-with-table",
+      "family": "module-handler",
+      "profile": "module-authoring",
+      "home": "core",
+      "kind": "round-trip",
+      "file": "module-handler/state-transition-with-table.json",
+      "sha256": "59dd2193ffad2d4324626ac4e102308fd2f06a61b08f4111e05ec9f11cdefda9",
+      "description": "A transition with its closed legal-move table, including a row with two targets in the author's order."
+    },
+    {
+      "id": "module-handler/ai-tool-bare",
+      "family": "module-handler",
+      "profile": "module-authoring",
+      "home": "core",
+      "kind": "round-trip",
+      "file": "module-handler/ai-tool-bare.json",
+      "sha256": "eb0878dacfadb08be10b6f9949c5153e225370ade960da4f8ea57f9fb9995a26",
+      "description": "An AI tool naming neither a definition nor an executor: both optional members omitted."
+    },
+    {
+      "id": "module-handler/ai-tool-with-definition-and-executor",
+      "family": "module-handler",
+      "profile": "module-authoring",
+      "home": "core",
+      "kind": "round-trip",
+      "file": "module-handler/ai-tool-with-definition-and-executor.json",
+      "sha256": "19fca53d7ecc325b405d4faa0824df526db1887346f84b83121e58a0e8d61e39",
+      "description": "An AI tool with its whole definition and its executor: every definition member, each optional present once and absent once, and both boolean members as strings."
+    },
+    {
+      "id": "module-handler/ai-tool-with-reads",
+      "family": "module-handler",
+      "profile": "module-authoring",
+      "home": "core",
+      "kind": "round-trip",
+      "file": "module-handler/ai-tool-with-reads.json",
+      "sha256": "ea74d14966b41f861ef584845b8962b56dd2962209462cc1ad8b97278357b79c",
+      "description": "An AI tool whose definition states the owned entities it reads: two edges, each the unit then the entity, after every other definition member."
+    },
+    {
+      "id": "module-handler/ai-tool-reads-none",
+      "family": "module-handler",
+      "profile": "module-authoring",
+      "home": "core",
+      "kind": "round-trip",
+      "file": "module-handler/ai-tool-reads-none.json",
+      "sha256": "79465d6115e9783c5bfe16937662bf5011596d92628201bb10d2a655898f1c06",
+      "description": "An AI tool declaring that it reads no owned entity: reads WRITTEN as [], which is not the same document as the member omitted. A writer that normalises the empty array away fails it."
+    },
+    {
+      "id": "module-handler/ai-tool-empty-arrays",
+      "family": "module-handler",
+      "profile": "module-authoring",
+      "home": "core",
+      "kind": "round-trip",
+      "file": "module-handler/ai-tool-empty-arrays.json",
+      "sha256": "912a0cf8a1fca6d5e34dcfcc7307c92d264998946d8a5d4fe199677aa553b217",
+      "description": "A tool declaring NO effects and NO actions. The one place in this family an empty array is a value rather than an absence, so a writer that normalises [] away diverges here."
+    },
+    {
+      "id": "module-handler/notification-emit",
+      "family": "module-handler",
+      "profile": "module-authoring",
+      "home": "core",
+      "kind": "round-trip",
+      "file": "module-handler/notification-emit.json",
+      "sha256": "338bb7bdcdb9aa9e8eac841e3b529713e10f4b60a3eb3cb92559a8bc1473c8dd",
+      "description": "A notification on the composition's channel: one member."
+    },
+    {
+      "id": "module-handler/custom-handler",
+      "family": "module-handler",
+      "profile": "module-authoring",
+      "home": "core",
+      "kind": "round-trip",
+      "file": "module-handler/custom-handler.json",
+      "sha256": "66b2f760eb0ff9eb56403ff9f7db6472a1302da16a12d4530ea934a3ac81ca4a",
+      "description": "The explicit escape, described in prose. Nothing can be derived from it, which is why it carries nothing else."
+    },
+    {
+      "id": "module-handler/logic-tree-handler",
+      "family": "module-handler",
+      "profile": "module-authoring",
+      "home": "core",
+      "kind": "round-trip",
+      "file": "module-handler/logic-tree-handler.json",
+      "sha256": "36ebcdcb9792b86aadc887d156164e3581460adc0d229eb39270c52286dd0c23",
+      "description": "A handler whose body is a program tree named by reference, never carried."
+    },
+    {
+      "id": "module-reject/document-malformed",
+      "family": "module-reject",
+      "profile": "module-authoring",
+      "home": "core",
+      "kind": "reject",
+      "file": "module-reject/document-malformed.json",
+      "sha256": "9247538c1d0611180865d1f80f5a9056c8647064128879aea534ff594f6cbae6",
+      "reject": "document-malformed",
+      "detect": "codec",
+      "description": "Not well-formed JSON: the document ends inside its children. The floor of every reader, restated for this document so a module codec is held to it on its own corpus."
+    },
+    {
+      "id": "module-reject/node-kind-unknown",
+      "family": "module-reject",
+      "profile": "module-authoring",
+      "home": "core",
+      "kind": "reject",
+      "file": "module-reject/node-kind-unknown.json",
+      "sha256": "a67ab8b0326ae8b75bb32f5b8a77e78beea373b5c3849e664670ac3c10f2bd8b",
+      "reject": "node-kind-unknown",
+      "detect": "codec",
+      "description": "A node kind this format does not define. Refused, never carried: an unknown node in a module is an unknown declaration about what the unit does, and a reader that dropped it would be reading a smaller module than the one written."
+    },
+    {
+      "id": "module-reject/node-kind-absent",
+      "family": "module-reject",
+      "profile": "module-authoring",
+      "home": "core",
+      "kind": "reject",
+      "file": "module-reject/node-kind-absent.json",
+      "sha256": "c2235e2535e62003e123d35fea48e14f411205e6621754eeb4d54091f3dfe14a",
+      "reject": "node-kind-absent",
+      "detect": "codec",
+      "description": "A node with members and no kind. Its one member is a parameter binding, and a reader that guessed the parameter from the member would be inventing a hole nobody declared."
+    },
+    {
+      "id": "module-reject/node-id-empty",
+      "family": "module-reject",
+      "profile": "module-authoring",
+      "home": "core",
+      "kind": "reject",
+      "file": "module-reject/node-id-empty.json",
+      "sha256": "0650931b8b8771204e7f0754ff4c5803b66a4b604fe7a9d471aaa6850d892b84",
+      "reject": "node-id-absent",
+      "detect": "codec",
+      "description": "A node whose id is the empty string. The module tree takes the composition tree's id rule (section M3.2), so empty is refused exactly as absent is."
+    },
+    {
+      "id": "module-reject/member-absent-handler-object",
+      "family": "module-reject",
+      "profile": "module-authoring",
+      "home": "core",
+      "kind": "reject",
+      "file": "module-reject/member-absent-handler-object.json",
+      "sha256": "c24340697990d9351bdff6fb60ec4a95749a7ababee858ca974b171943bb7040",
+      "reject": "member-absent",
+      "detect": "codec",
+      "description": "A handler node with no handler member. \"Declares no handler\" and \"the handler was omitted\" are different claims and only one is authored (section M5.7)."
+    },
+    {
+      "id": "module-reject/member-absent-handler-payload",
+      "family": "module-reject",
+      "profile": "module-authoring",
+      "home": "core",
+      "kind": "reject",
+      "file": "module-reject/member-absent-handler-payload.json",
+      "sha256": "8592bb87b8ccd9b66d12fff93fcb3d5452a962afec762c9a13b4396eca4d134a",
+      "reject": "member-absent",
+      "detect": "codec",
+      "description": "A CRUD handler that names no data type. The vector a lenient reader passes by reading the missing member as the empty string, which decodes to a handler over a data type nobody named."
+    },
+    {
+      "id": "module-reject/member-absent-table-move",
+      "family": "module-reject",
+      "profile": "module-authoring",
+      "home": "core",
+      "kind": "reject",
+      "file": "module-reject/member-absent-table-move.json",
+      "sha256": "35410bcb32b1dc99cf9419510ee8ee5ae299953a420f4d6a9d5e83f3d1025c30",
+      "reject": "member-absent",
+      "detect": "codec",
+      "description": "A legal-move table whose one move names no targets. The requirement holds at every depth of a handler, and a reader that read a malformed table as no table would turn a declared legal-move table into a transition that permits nothing being stated at all."
+    },
+    {
+      "id": "module-reject/member-type-invalid-bound",
+      "family": "module-reject",
+      "profile": "module-authoring",
+      "home": "core",
+      "kind": "reject",
+      "file": "module-reject/member-type-invalid-bound.json",
+      "sha256": "c50af035354348479069b0917f52f3b712116712e39cfb69794717265ef6fb6b",
+      "reject": "member-type-invalid",
+      "detect": "codec",
+      "description": "A parameter bound written as a number. Absence is an open hole and a wrong type is a broken record; collapsing the two would decode this as a hole nobody filled (section M5.6)."
+    },
+    {
+      "id": "module-reject/member-type-invalid-definition",
+      "family": "module-reject",
+      "profile": "module-authoring",
+      "home": "core",
+      "kind": "reject",
+      "file": "module-reject/member-type-invalid-definition.json",
+      "sha256": "6163bbd0ba684bc75679f42c4c7d9c1eb8998c9e92d190ffaf20dd6fe2de87da",
+      "reject": "member-type-invalid",
+      "detect": "codec",
+      "description": "A tool definition written as a string. Present and the wrong type, so refused rather than read as a tool with no definition."
+    },
+    {
+      "id": "module-reject/boolean-spelling-invalid",
+      "family": "module-reject",
+      "profile": "module-authoring",
+      "home": "core",
+      "kind": "reject",
+      "file": "module-reject/boolean-spelling-invalid.json",
+      "sha256": "4071876bdf23f77b43973cdd03875e827a56292e27c5c854c02ff23473c2ea2f",
+      "reject": "boolean-spelling-invalid",
+      "detect": "codec",
+      "description": "A tool definition whose isLiveInterface is the JSON literal false. Every boolean in this family is the string \"true\" or \"false\" (section 4.5), and a reader that accepted the literal would accept a second spelling of the same document."
+    },
+    {
+      "id": "module-reject/effect-token-unknown-host",
+      "family": "module-reject",
+      "profile": "module-authoring",
+      "home": "core",
+      "kind": "reject",
+      "file": "module-reject/effect-token-unknown-host.json",
+      "sha256": "fed52ee1432f8785bb6f3f60506e0119838a84d9ebdf743c0a82f95d8d149c94",
+      "reject": "effect-token-unknown",
+      "detect": "codec",
+      "description": "A host effect outside the three section M5.1 registers."
+    },
+    {
+      "id": "module-reject/effect-token-unknown-determinism-order",
+      "family": "module-reject",
+      "profile": "module-authoring",
+      "home": "core",
+      "kind": "reject",
+      "file": "module-reject/effect-token-unknown-determinism-order.json",
+      "sha256": "910f18118321af6c3950877b3ec98e18b74663d5a59f4d6d4e804bdac5f0dada",
+      "reject": "effect-token-unknown",
+      "detect": "codec",
+      "description": "The set {clock, network} spelled with its factors out of the fixed order. The set is legitimate and the spelling is not: each set has exactly one label (section M5.1), and a reader that accepted this one would let one module carry two content addresses."
+    },
+    {
+      "id": "module-reject/handler-kind-unknown",
+      "family": "module-reject",
+      "profile": "module-authoring",
+      "home": "core",
+      "kind": "reject",
+      "file": "module-reject/handler-kind-unknown.json",
+      "sha256": "16fe66a89cb03b9a393b72fd650fd6b980ab2bd28ce6792b0c88478fbcd8acf6",
+      "reject": "handler-kind-unknown",
+      "detect": "codec",
+      "description": "A handler case outside the closed six. Refused rather than guessed at, unlike an unknown member, which is ignored (section M6)."
+    },
+    {
+      "id": "module-reject/citation-incomplete",
+      "family": "module-reject",
+      "profile": "module-authoring",
+      "home": "core",
+      "kind": "reject",
+      "file": "module-reject/citation-incomplete.json",
+      "sha256": "b3237986b15e92aaab909f4a2b067bab54c1b2575dbcf799642df82deea7c267",
+      "reject": "citation-incomplete",
+      "detect": "codec",
+      "description": "A module view citation naming a specification and no revision. Section 6.2 applies to the module root exactly as to a module reference."
+    },
+    {
+      "id": "module-reject/member-absent-data-type-decl",
+      "family": "module-reject",
+      "profile": "module-authoring",
+      "home": "core",
+      "kind": "reject",
+      "file": "module-reject/member-absent-data-type-decl.json",
+      "sha256": "73e547027821670b5520bbd169bcfd2f74d98d4a1aa684fc0b1a0daf4b13ef83",
+      "reject": "member-absent",
+      "detect": "codec",
+      "description": "A data type declaration naming no type. A declaration of nothing is not a declaration (section M5.9)."
+    },
+    {
+      "id": "module-reject/member-absent-route-decl",
+      "family": "module-reject",
+      "profile": "module-authoring",
+      "home": "core",
+      "kind": "reject",
+      "file": "module-reject/member-absent-route-decl.json",
+      "sha256": "b647e4c6c2b5e66b7a0a3f150a22938f48cd1dce65018bfab38d0586ed864d46",
+      "reject": "member-absent",
+      "detect": "codec",
+      "description": "A route declaration claiming no route (section M5.10)."
+    },
+    {
+      "id": "module-reject/member-absent-data-flow",
+      "family": "module-reject",
+      "profile": "module-authoring",
+      "home": "core",
+      "kind": "reject",
+      "file": "module-reject/member-absent-data-flow.json",
+      "sha256": "6c7bb4ee75b6fc9f9dae6ae0d15192b2d6591a059c4039585dda67c2c8f7d573",
+      "reject": "member-absent",
+      "detect": "codec",
+      "description": "A data flow stating its input and no pipeline. The pipeline is REQUIRED and [] is its empty value, so an omitted pipeline is a broken record rather than an empty one (section M5.11)."
+    },
+    {
+      "id": "module-reject/member-absent-flow-expression",
+      "family": "module-reject",
+      "profile": "module-authoring",
+      "home": "core",
+      "kind": "reject",
+      "file": "module-reject/member-absent-flow-expression.json",
+      "sha256": "1c85f0830e4980cab48b840b100358ff011539681997a8718142acb39c12bab8",
+      "reject": "member-absent",
+      "detect": "codec",
+      "description": "A binary expression with no right operand, two levels inside a data flow step: member-absent applies at any depth of the flow (section M5.11)."
+    },
+    {
+      "id": "module-reject/member-type-invalid-namespace",
+      "family": "module-reject",
+      "profile": "module-authoring",
+      "home": "core",
+      "kind": "reject",
+      "file": "module-reject/member-type-invalid-namespace.json",
+      "sha256": "0fbf828ae97f4a20b461292e55518d7835fbf1f5fdcf6bd6c66637d2c6b73d33",
+      "reject": "member-type-invalid",
+      "detect": "codec",
+      "description": "A root namespace written as an array. Present with the wrong type is a broken record, never the absence it is not (section M5.1)."
+    },
+    {
+      "id": "module-reject/member-type-invalid-platform-version",
+      "family": "module-reject",
+      "profile": "module-authoring",
+      "home": "core",
+      "kind": "reject",
+      "file": "module-reject/member-type-invalid-platform-version.json",
+      "sha256": "e57e7dc5b9da16cbfa956e54bd4118c67710e42dcb0e03a504e97989922a694a",
+      "reject": "member-type-invalid",
+      "detect": "codec",
+      "description": "A root platform version written as a JSON number. The member is a string; the format carries no number a writer did not mean as one (section M5.1)."
+    },
+    {
+      "id": "module-reject/member-type-invalid-flow-input",
+      "family": "module-reject",
+      "profile": "module-authoring",
+      "home": "core",
+      "kind": "reject",
+      "file": "module-reject/member-type-invalid-flow-input.json",
+      "sha256": "1097665881b3d6d88fb9fe7499e2b160f079baf6d9141cdc3dbe03db7207d443",
+      "reject": "member-type-invalid",
+      "detect": "codec",
+      "description": "A data flow whose input is a string rather than an array of column objects (section M5.11)."
+    },
+    {
+      "id": "module-reject/data-flow-term-unknown-verb",
+      "family": "module-reject",
+      "profile": "module-authoring",
+      "home": "core",
+      "kind": "reject",
+      "file": "module-reject/data-flow-term-unknown-verb.json",
+      "sha256": "1757ae47dc93bc621570caa75945e2b9a231bc4ed2bbd4d76e9cb656f60de466",
+      "reject": "data-flow-term-unknown",
+      "detect": "codec",
+      "description": "A join step. It is the composition algebra's (section 12.7) and is deliberately not registered for a module data flow at this revision (sections M1.2, M5.11), so a reader refuses it rather than guess what source it joins."
+    },
+    {
+      "id": "module-reject/member-absent-author-body",
+      "family": "module-reject",
+      "profile": "module-authoring",
+      "home": "core",
+      "kind": "reject",
+      "file": "module-reject/member-absent-author-body.json",
+      "sha256": "f953230b7fd63144001d51937bdb7e7ee549d2ea94529d07543b802cbcd3e425",
+      "reject": "member-absent",
+      "detect": "codec",
+      "description": "An author body declaring its sources and no packages member (section M5.12): both members are REQUIRED, and [] is the spelling of none."
+    },
+    {
+      "id": "module-reject/member-type-invalid-author-body",
+      "family": "module-reject",
+      "profile": "module-authoring",
+      "home": "core",
+      "kind": "reject",
+      "file": "module-reject/member-type-invalid-author-body.json",
+      "sha256": "d5e55a179fd4040f55b749bdeb2e2030d43e0d216a9dc1de07f3ef165d27e1f8",
+      "reject": "member-type-invalid",
+      "detect": "codec",
+      "description": "An author body whose sources carry a number among the paths (section M5.12)."
+    },
+    {
+      "id": "module-reject/author-source-invalid-parent",
+      "family": "module-reject",
+      "profile": "module-authoring",
+      "home": "core",
+      "kind": "reject",
+      "file": "module-reject/author-source-invalid-parent.json",
+      "sha256": "97a88c9ef5bf94a5cc1299a3ffccc9caabc1797b0b802e05a641173448fd6f0f",
+      "reject": "author-source-invalid",
+      "detect": "codec",
+      "description": "An author source with a '..' segment, which would name a file outside the place the unit's author-owned sources are kept (section M5.12)."
+    },
+    {
+      "id": "module-reject/author-source-invalid-repeat",
+      "family": "module-reject",
+      "profile": "module-authoring",
+      "home": "core",
+      "kind": "reject",
+      "file": "module-reject/author-source-invalid-repeat.json",
+      "sha256": "d4c5daea9a9ed6b3466b449634a31a347765d02759c1edcbf1cae4d5284e76cd",
+      "reject": "author-source-invalid",
+      "detect": "codec",
+      "description": "An author source repeating an earlier one, compared exactly (section M5.12): a compile order that names one source twice orders nothing."
+    },
+    {
+      "id": "module-reject/author-package-invalid-blank",
+      "family": "module-reject",
+      "profile": "module-authoring",
+      "home": "core",
+      "kind": "reject",
+      "file": "module-reject/author-package-invalid-blank.json",
+      "sha256": "61f914ebf0f750cfa9cb5e9cd677a3f4965148ee7512d2be7dbd896ab51c26b8",
+      "reject": "author-package-invalid",
+      "detect": "codec",
+      "description": "An author package that is wholly whitespace (section M5.12): an identity naming no package."
+    },
+    {
+      "id": "module-reject/author-package-invalid-repeat",
+      "family": "module-reject",
+      "profile": "module-authoring",
+      "home": "core",
+      "kind": "reject",
+      "file": "module-reject/author-package-invalid-repeat.json",
+      "sha256": "11b3ca841c8e95aabefb7879854f103f1ee604a1c45ef657a770d82caf9750ce",
+      "reject": "author-package-invalid",
+      "detect": "codec",
+      "description": "An author package repeating an earlier one, compared exactly (section M5.12)."
+    },
+    {
+      "id": "module-reject/member-type-invalid-package-id",
+      "family": "module-reject",
+      "profile": "module-authoring",
+      "home": "core",
+      "kind": "reject",
+      "file": "module-reject/member-type-invalid-package-id.json",
+      "sha256": "502429dce51259504e3045771138de7170bdbf845db20c0c6479731828b5b495",
+      "reject": "member-type-invalid",
+      "detect": "codec",
+      "description": "A root package identity written as a number (section M5.1): present with the wrong type is a broken record, never the absence that would default it to the namespace."
+    },
+    {
+      "id": "module-reject/member-type-invalid-registration",
+      "family": "module-reject",
+      "profile": "module-authoring",
+      "home": "core",
+      "kind": "reject",
+      "file": "module-reject/member-type-invalid-registration.json",
+      "sha256": "2a0bcfcf0fa831ac7116be8193cb347f05b76e491905351ca11fcae147271073",
+      "reject": "member-type-invalid",
+      "detect": "codec",
+      "description": "A root registration name written as an array (section M5.1)."
+    },
+    {
+      "id": "module-reject/data-type-owner-unknown",
+      "family": "module-reject",
+      "profile": "module-authoring",
+      "home": "core",
+      "kind": "reject",
+      "file": "module-reject/data-type-owner-unknown.json",
+      "sha256": "c5f1c637e67d1209f1d0d49e9a6599742b70d002a852b39d01c7c995d064d2f9",
+      "reject": "data-type-owner-unknown",
+      "detect": "codec",
+      "description": "A data type declaration whose owner is outside section M5.9's one-token vocabulary: `author` says the author body defines the type, and absence says the evaluator does; no third party is named."
+    },
+    {
+      "id": "module-reject/member-type-invalid-data-type-owner",
+      "family": "module-reject",
+      "profile": "module-authoring",
+      "home": "core",
+      "kind": "reject",
+      "file": "module-reject/member-type-invalid-data-type-owner.json",
+      "sha256": "1ae6a227226f3c4f2065867004ccba93befbb0d87e7e146fd8604e27487a176e",
+      "reject": "member-type-invalid",
+      "detect": "codec",
+      "description": "A data type owner written as a JSON boolean (section M5.9): the member is a token, so a reader that coerced true to `author` would accept a spelling no writer emits."
+    },
+    {
+      "id": "module-reject/author-source-invalid-cross-tier",
+      "family": "module-reject",
+      "profile": "module-authoring",
+      "home": "core",
+      "kind": "reject",
+      "file": "module-reject/author-source-invalid-cross-tier.json",
+      "sha256": "d2fd5a0df4b446f33d097e7f1cd2d7af39c74082c2d78c101b35accd31b8012f",
+      "reject": "author-source-invalid",
+      "detect": "codec",
+      "description": "A path named in the server tier and again in the shared tier (section M5.12): one file is in one tier, so a path is named once across all four path arrays."
+    },
+    {
+      "id": "module-reject/author-source-invalid-tier-empty",
+      "family": "module-reject",
+      "profile": "module-authoring",
+      "home": "core",
+      "kind": "reject",
+      "file": "module-reject/author-source-invalid-tier-empty.json",
+      "sha256": "c4226f863d49d7a8fa050bfae582ac1dcc159aadc5448561d2ba9a0103527869",
+      "reject": "author-source-invalid",
+      "detect": "codec",
+      "description": "A present, empty client tier (section M5.12): an OPTIONAL path array is written only when it names something, so a reader that read [] as absent would accept bytes no canonical writer emits."
+    },
+    {
+      "id": "module-reject/author-source-invalid-asset-parent",
+      "family": "module-reject",
+      "profile": "module-authoring",
+      "home": "core",
+      "kind": "reject",
+      "file": "module-reject/author-source-invalid-asset-parent.json",
+      "sha256": "6a46d57bb3529375ec5a8bffcd5b78558ce0b9097b3ebf97338f491ddcce46cf",
+      "reject": "author-source-invalid",
+      "detect": "codec",
+      "description": "An asset path with a '..' segment (section M5.12): assets are read under the path grammar the sources are, and this one would name a file outside the unit's author-owned place."
+    },
+    {
+      "id": "module-reject/member-type-invalid-author-tier",
+      "family": "module-reject",
+      "profile": "module-authoring",
+      "home": "core",
+      "kind": "reject",
+      "file": "module-reject/member-type-invalid-author-tier.json",
+      "sha256": "855af6ba0a0f67c25fa0e787e72bddbeb7e4f4f823ffd3d8c7a8267d3ec25239",
+      "reject": "member-type-invalid",
+      "detect": "codec",
+      "description": "An author body whose shared tier is a string rather than an array of paths (section M5.12)."
+    },
+    {
+      "id": "module-reject/data-flow-term-unknown-column-type",
+      "family": "module-reject",
+      "profile": "module-authoring",
+      "home": "core",
+      "kind": "reject",
+      "file": "module-reject/data-flow-term-unknown-column-type.json",
+      "sha256": "c0046f6db186fdea6890d4ee300e52f1af76792ec298803afec2604f75ba00b0",
+      "reject": "data-flow-term-unknown",
+      "detect": "codec",
+      "description": "An input column typed float. The column types are int and string (section M5.11, after section 12.7)."
+    },
+    {
+      "id": "module-reject/data-flow-term-unknown-operator",
+      "family": "module-reject",
+      "profile": "module-authoring",
+      "home": "core",
+      "kind": "reject",
+      "file": "module-reject/data-flow-term-unknown-operator.json",
+      "sha256": "214fe43f669233d78448e2ba04a8e66b608a95b103cbd64e05c5b41af50b8b95",
+      "reject": "data-flow-term-unknown",
+      "detect": "codec",
+      "description": "A binary expression over lessThan. The operators are greaterThan and multiply at this revision (section M5.11)."
+    },
+    {
+      "id": "module-reject/data-flow-term-unknown-aggregate",
+      "family": "module-reject",
+      "profile": "module-authoring",
+      "home": "core",
+      "kind": "reject",
+      "file": "module-reject/data-flow-term-unknown-aggregate.json",
+      "sha256": "ace51752ff3f6a1bf3b55f4ac5677018025d4f615340875a6b01bb15841fae25",
+      "reject": "data-flow-term-unknown",
+      "detect": "codec",
+      "description": "A groupBy aggregate over mean. The aggregate functions are count, sum and first at this revision (section M5.11)."
+    },
+    {
+      "id": "module-reject/token-unregistered-view",
+      "family": "module-reject",
+      "profile": "module-authoring",
+      "home": "core",
+      "kind": "reject",
+      "file": "module-reject/token-unregistered-view.json",
+      "sha256": "31a009000c2c2d07107787db3b67967e9b63e4ab00d02bbebd358ec9350b36d5",
+      "reject": "token-unregistered",
+      "detect": "profile",
+      "description": "A view token the module-authoring profile does not register (it adopts the server-app-host vocabulary by reference, section M9). A profile class: a core reader carries the token, a profile reader refuses it."
+    },
+    {
+      "id": "module-accept/unknown-member",
+      "family": "module-accept",
+      "profile": "module-authoring",
+      "home": "core",
+      "kind": "accept",
+      "file": "module-accept/unknown-member.json",
+      "sha256": "41f0aab15db3bbe66341737842de758bd35c0abf80b7785ba22c751551054198",
+      "interpretation": "Both futureMember on the module root and priority on the handler object are ignored on read and not re-emitted; the document decodes to a root over one CRUD handler on Order, and re-encodes without either member.",
+      "description": "An unknown member on a node and on a handler object. Section 9.3's forward-compatibility rule, applied one level in: an implementation that refuses either will break on the next additive member."
+    },
+    {
+      "id": "module-accept/children-absent",
+      "family": "module-accept",
+      "profile": "module-authoring",
+      "home": "core",
+      "kind": "accept",
+      "file": "module-accept/children-absent.json",
+      "sha256": "425c7916f86462382dad188761db6973eeaad8de0446cc848b0d5491ca85dc9b",
+      "interpretation": "The view body has no children member and is read as a leaf; on re-encoding the writer emits \"children\":[].",
+      "description": "A leaf node with its children member absent. A reader must accept it (section M3.1); a writer must not produce it."
+    },
+    {
+      "id": "module-accept/unknown-member-data-flow",
+      "family": "module-accept",
+      "profile": "module-authoring",
+      "home": "core",
+      "kind": "accept",
+      "file": "module-accept/unknown-member-data-flow.json",
+      "sha256": "238c377288f32f089615b296309fef9c17ef741dbdd978ebc57f8b6d5d8d4cc6",
+      "interpretation": "nullable on the input column, qualifier on the column expression and label on the filter step are all ignored on read and not re-emitted; the document decodes to a root over one data flow reading int column a through one filter keeping rows where a is greater than 0, and re-encodes without any of the three members.",
+      "description": "Unknown members on a column, an expression and a step inside a data flow. Section M6's forward-compatibility rule, one level in, applies to the flow exactly as to a handler object (section M5.11)."
+    },
+    {
+      "id": "profile-placement/reject-vocabulary-unresolved",
+      "family": "profile-placement",
+      "profile": "local-first-host",
+      "home": "core",
+      "kind": "reject",
+      "file": "profile-placement/reject-vocabulary-unresolved.json",
+      "sha256": "c2646426c04940fa5ebb3f53accad67db0b60fc9e6d0bd61d45f05f7ebb332e1",
+      "reject": "vocabulary-unresolved",
+      "detect": "profile",
+      "description": "A composition claiming a placement whose root's base no registered vocabulary profile registers, so the placement has no vocabulary to compose with (section 8.6). The same base token is refused as token-unregistered by the vocabulary profile's own family; here no vocabulary profile is in play at all, which is why the class differs. A CORE reader must NOT refuse this document: the base is opaque to it and the claim is carried."
+    }
+  ]
+}

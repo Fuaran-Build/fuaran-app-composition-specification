@@ -1,0 +1,44 @@
+name: gate
+
+# The specification home's own gate. It runs what `pwsh ./run.ps1` runs, because
+# a CI job that checks something slightly different from the local command is a
+# second definition of "passing" and the two drift.
+#
+# There is no build step and no package manager. Node's standard library and
+# PowerShell 7 are the whole toolchain, both of which the runner already has, so
+# this job is the local command and nothing else.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  gate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Verify the corpus and the artefacts' agreement
+        shell: pwsh
+        run: ./run.ps1
+
+      # The corpus's whole value is that its bytes are exactly what they are, so
+      # a checkout that rewrote a line ending would make every digest read as
+      # drift on one runner and not another. .gitattributes pins LF; this
+      # confirms the pin held, rather than assuming it.
+      - name: Confirm the LF pin survived the checkout
+        shell: bash
+        run: |
+          if grep -rlU $'\r' wire-fixtures schemas profiles; then
+            echo "::error::a CR survived the checkout — the .gitattributes LF pin is not being honoured" >&2
+            exit 1
+          fi

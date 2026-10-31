@@ -1,0 +1,1 @@
+{"kind":"appRoot","base":"serverApp","layers":[],"id":"reject-member-absent-fact-table-grains","children":[{"kind":"moduleRef","view":"bareFeliz","factTables":[{"id":"trade.daily","subjects":["store"],"metrics":["revenue"]}],"id":"Unit","children":[]}]}

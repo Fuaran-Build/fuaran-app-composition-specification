@@ -1,0 +1,1 @@
+{"kind":"appRoot","base":"serverApp","layers":[],"id":"reject-boolean-spelling-invalid","children":[{"kind":"serverConfig","id":"serverConfig","children":[{"kind":"connectorRef","impl":"Ledger","oauth":"oauth2","rateLimited":true,"id":"ds-ledger","children":[]}]}]}

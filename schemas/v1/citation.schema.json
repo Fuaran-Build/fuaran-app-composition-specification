@@ -1,0 +1,14 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://fuaran.com/app-composition/v1/citation.schema.json",
+  "title": "Versioned citation",
+  "description": "APP_COMPOSITION_WIRE.md section 6. Structural only and subordinate to the text: this schema cannot express member ORDER, which section 4.2 makes part of the contract.",
+  "type": "object",
+  "properties": {
+    "spec": { "type": "string", "minLength": 1 },
+    "version": { "type": "string", "minLength": 1 },
+    "corpusHead": { "type": "string", "minLength": 1 }
+  },
+  "required": ["spec", "version"],
+  "additionalProperties": false
+}

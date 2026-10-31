@@ -1,0 +1,1 @@
+{"kind":"moduleRoot","view":"bareFeliz","host":"writesHost","determinism":"deterministic","id":"m","children":[{"kind":"handler","handler":{"kind":"aiToolHandler","tool":"t","definition":"summarise the order","executor":"orders-logic"},"id":"h","children":[]}]}

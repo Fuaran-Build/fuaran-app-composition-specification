@@ -1,0 +1,1 @@
+{"kind":"moduleRoot","view":"bareFeliz","host":"readsHost","determinism":"deterministic","id":"m","children":[{"kind":"dataFlow","input":[{"name":"a","type":"int"}],"pipeline":[{"verb":"groupBy","keys":[],"aggregates":[{"name":"m","fn":"mean","of":"a"}]}],"id":"f","children":[]}]}

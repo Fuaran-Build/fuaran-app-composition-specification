@@ -1,0 +1,1 @@
+{"kind":"moduleRoot","view":"bareFeliz","host":"writesHost","determinism":"deterministic","id":"m","children":[{"kind":"handler","handler":{"kind":"stateTransition","dataType":"Job","field":"Status","table":{"states":["open","done"],"initial":"open","moves":[{"from":"open"}]}},"id":"h","children":[]}]}

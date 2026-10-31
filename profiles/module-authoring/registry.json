@@ -1,0 +1,84 @@
+{
+  "specification": "app-composition-wire",
+  "coreVersion": 1,
+  "profile": "module-authoring",
+  "profileVersion": "1.0",
+  "status": "stable",
+  "note": "The machine-readable rendering of MODULE_AUTHORING_WIRE.md sections M5, M6, M8, M9 and M10. A DOCUMENT profile, not an evaluator profile: it registers no placement and declares no runtime facet, so it carries no facets block and no facet families. Stable at 1.0: section M2 states what that promises and the evidence the profile was promoted on. Its one profile-token slot, the module root's view, adopts server-app-host's moduleRef.view vocabulary by reference rather than by copy, so a module body and the reference to it range over one set.",
+  "vocabularyBy": {
+    "reference": "server-app-host",
+    "slots": ["moduleRef.view"],
+    "note": "A view token admissible on a module reference under server-app-host is admissible on a module root here, citation-bearing exactly where it is there, and no other is (section M9)."
+  },
+  "nodeKinds": [
+    "moduleRoot",
+    "dataTypeParam",
+    "columnCount",
+    "apiParam",
+    "substrateParam",
+    "queryTargetParam",
+    "handler",
+    "viewBody",
+    "dataTypeDecl",
+    "routeDecl",
+    "dataFlow",
+    "authorBody"
+  ],
+  "handlerKinds": [
+    "crudOverDataType",
+    "stateTransition",
+    "aiToolHandler",
+    "notificationEmit",
+    "customHandler",
+    "logicTreeHandler"
+  ],
+  "tokens": {
+    "moduleRoot.host": {
+      "closure": "closed",
+      "tokens": ["pure", "readsHost", "writesHost"]
+    },
+    "moduleRoot.determinism": {
+      "closure": "closed",
+      "tokens": [
+        "deterministic",
+        "clock",
+        "random",
+        "network",
+        "clock+random",
+        "clock+network",
+        "random+network",
+        "clock+random+network"
+      ]
+    },
+    "dataTypeDecl.owner": {
+      "closure": "closed",
+      "tokens": ["author"]
+    }
+  },
+  "refusalClasses": [
+    "document-malformed",
+    "node-kind-unknown",
+    "node-kind-absent",
+    "node-id-absent",
+    "member-absent",
+    "member-type-invalid",
+    "boolean-spelling-invalid",
+    "effect-token-unknown",
+    "handler-kind-unknown",
+    "citation-incomplete",
+    "data-flow-term-unknown",
+    "data-type-owner-unknown",
+    "author-source-invalid",
+    "author-package-invalid",
+    "token-unregistered"
+  ],
+  "moduleRules": [
+    "root-kind-invalid",
+    "node-id-duplicate",
+    "module-node-not-leaf",
+    "body-address-mismatched",
+    "data-flow-duplicate",
+    "handler-type-undeclared",
+    "author-body-duplicate"
+  ]
+}

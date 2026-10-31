@@ -1,0 +1,1 @@
+{"kind":"appRoot","base":"serverApp","layers":[],"id":"node-connector-ref","children":[{"kind":"serverConfig","id":"serverConfig","children":[{"kind":"connectorRef","impl":"Alpha","oauth":"oauth1a","rateLimited":"true","id":"ds-a","children":[]},{"kind":"connectorRef","impl":"Beta","oauth":"noOAuth","rateLimited":"false","id":"ds-b","children":[]}]}]}

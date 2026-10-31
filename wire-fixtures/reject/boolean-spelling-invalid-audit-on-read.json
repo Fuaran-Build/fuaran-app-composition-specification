@@ -1,0 +1,1 @@
+{"kind":"appRoot","base":"serverApp","layers":[],"id":"reject-boolean-spelling-invalid-audit-on-read","children":[{"kind":"moduleRef","view":"bareFeliz","entities":[{"name":"Order","disclosure":{"class":"internal"},"fields":[{"fieldPath":"OrderId","level":"pii","auditOnRead":true}]}],"id":"Unit","children":[]}]}

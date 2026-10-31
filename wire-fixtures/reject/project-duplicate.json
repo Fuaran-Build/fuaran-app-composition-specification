@@ -1,0 +1,1 @@
+{"kind":"appRoot","base":"serverApp","layers":[],"projects":["src/Ledger/Ledger.fsproj","tools/Seed/Seed.fsproj","src/Ledger/Ledger.fsproj"],"id":"reject-project-duplicate","children":[]}

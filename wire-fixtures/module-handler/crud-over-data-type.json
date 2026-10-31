@@ -1,0 +1,1 @@
+{"kind":"moduleRoot","view":"bareFeliz","host":"writesHost","determinism":"deterministic","id":"crud","children":[{"kind":"handler","handler":{"kind":"crudOverDataType","dataType":"Invoice"},"id":"crud-h","children":[]}]}

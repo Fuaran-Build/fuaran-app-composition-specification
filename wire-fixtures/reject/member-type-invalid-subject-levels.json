@@ -1,0 +1,1 @@
+{"kind":"appRoot","base":"serverApp","layers":[],"id":"reject-member-type-invalid-subject-levels","children":[{"kind":"moduleRef","view":"bareFeliz","subjectDefinitions":[{"id":"trade","name":"Trading","levels":"site"}],"id":"Unit","children":[]}]}

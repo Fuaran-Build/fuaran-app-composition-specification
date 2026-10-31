@@ -1,0 +1,1 @@
+{"kind":"appRoot","base":"serverApp","layers":[],"id":"extension-reserved-with-demand-digest","children":[{"kind":"extensionRef","namespace":"fuaran.program","extensionKind":"logic-tree","fields":[{"name":"ref","value":"approval-flow-v3"},{"name":"demandDigest","value":"5f1d1b1e0f7c4a2b9d3e6c8a0b4f7e2d1c5a8b3e6f9d2c4a7b0e3f6c9a2d5b8e"}],"id":"logic","children":[]}]}

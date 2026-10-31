@@ -1,0 +1,1 @@
+{"kind":"appRoot","base":"serverApp","layers":[],"id":"reject-oauth-kind-unknown","children":[{"kind":"serverConfig","id":"serverConfig","children":[{"kind":"connectorRef","impl":"Ledger","oauth":"oauth3","rateLimited":"false","id":"ds-ledger","children":[]}]}]}

@@ -1,0 +1,22 @@
+{
+  "specification": "app-composition-wire",
+  "coreVersion": 1,
+  "profile": "durable-session-host",
+  "profileVersion": "1.1",
+  "kind": "placement",
+  "note": "The machine-readable rendering of PROFILE_DURABLE_SESSION_HOST.md section P8. A PLACEMENT profile (core section 8.6): it registers no vocabulary by construction, so this file carries no tokens or nodeKinds block and no reference to one. The vocabulary is whichever vocabulary profile the composition's root belongs to; naming one here would make this placement move whenever that profile moves.",
+  "composesWith": {
+    "rule": "the vocabulary profile the composition's root belongs to: the one whose appRoot.base vocabulary registers the root's base token (core section 8.6)",
+    "unresolved": "vocabulary-unresolved",
+    "note": "A token, node kind, composition rule or refusal class of that vocabulary profile applies here unchanged. What this placement adds is its facet declaration below, and nothing a decoder owes."
+  },
+  "facets": {
+    "delivery": ["atMostOnce", "atLeastOnce", "exactlyOnceEffective"],
+    "idempotency": ["idempotent", "idempotentWithStore", "nonIdempotent"],
+    "restart": ["lostOnRestart", "retriedAfterRestart"],
+    "convergence": ["singleWriter"],
+    "attestation": []
+  },
+  "facetFamilies": ["kill-and-replay", "partition-and-fold"],
+  "refusalClasses": ["vocabulary-unresolved", "concurrent-authorship-unsupported"]
+}

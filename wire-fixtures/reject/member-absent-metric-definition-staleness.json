@@ -1,0 +1,1 @@
+{"kind":"appRoot","base":"serverApp","layers":[],"id":"reject-member-absent-metric-definition-staleness","children":[{"kind":"moduleRef","view":"bareFeliz","metricDefinitions":[{"id":"orders","name":"Orders","unit":"count","dimensionality":"count","direction":"higherIsBetter","displayFormat":"N0"}],"id":"Unit","children":[]}]}

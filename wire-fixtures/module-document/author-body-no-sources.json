@@ -1,0 +1,1 @@
+{"kind":"moduleRoot","view":"bareFeliz","host":"writesHost","determinism":"deterministic","id":"mod.notes","children":[{"kind":"handler","handler":{"kind":"customHandler","note":"hand-written reconciliation"},"id":"reconcile","children":[]},{"kind":"authorBody","sources":[],"packages":["Example.Facts.Server"],"id":"body","children":[]}]}

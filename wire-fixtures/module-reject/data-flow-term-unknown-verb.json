@@ -1,0 +1,1 @@
+{"kind":"moduleRoot","view":"bareFeliz","host":"readsHost","determinism":"deterministic","id":"m","children":[{"kind":"dataFlow","input":[{"name":"a","type":"int"}],"pipeline":[{"verb":"join","how":"semi","on":[{"left":"a","right":"a"}],"source":{"columns":[{"name":"a","type":"int"}],"rows":[]}}],"id":"f","children":[]}]}

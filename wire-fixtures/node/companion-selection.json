@@ -1,0 +1,1 @@
+{"kind":"appRoot","base":"serverApp","layers":["ai"],"id":"node-companion-selection","children":[{"kind":"serverConfig","id":"serverConfig","children":[{"kind":"companionSelection","slot":"aiProvider","impl":"Claude","id":"ai","children":[]},{"kind":"companionSelection","slot":"jobScheduler","impl":"InProcess","id":"sched","children":[]}]}]}

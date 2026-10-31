@@ -1,0 +1,1 @@
+{"kind":"appRoot","base":"serverApp","layers":["forms"],"shortName":"ExpenseReceipts","projects":["tools/Seed/Seed.fsproj","src/Modules/Ledger/Ledger.fsproj"],"id":"node-app-root-projects","children":[{"kind":"dataType","name":"Entry","id":"Entry","children":[]}]}
