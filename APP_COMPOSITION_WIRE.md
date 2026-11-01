@@ -506,6 +506,7 @@ are:
 | `metrics` | array of strings | REQUIRED |
 | `grains` | array of strings *(profile token, element)* | REQUIRED |
 | `definition` | fact-table definition object | OPTIONAL |
+| `description` | description object | OPTIONAL |
 
 `id` is the table's logical identity; `subjects` names the subject hierarchies its rows are drawn
 from, and `metrics` the metrics its columns carry, each by the identity under which the unit defines
@@ -572,11 +573,21 @@ in declaration order:
 A **staleness** object is `{ "policy", "windowSeconds" }` — the policy *(profile token)* and,
 OPTIONAL, a window in whole seconds — and a **roll-up** object is `{ "kind", "tolerance" }` — the
 kind *(profile token)* and, OPTIONAL, a tolerance written as a decimal literal in a string, so the
-value is carried exactly. A **subject definition** is `{ "id", "name", "levels", "calendar" }`: the
-hierarchy's identity, its display name, its level labels from root to leaf (an array of strings, in
-the composition's order), and — OPTIONAL — the calendar its periods are counted in. Every OPTIONAL
-member here is **omitted when the composition states none** (§4.5): its absence is a statement that
-there is nothing to state, never a value to substitute.
+value is carried exactly. A **subject definition** is `{ "id", "name", "levels", "calendar",
+"description" }`: the hierarchy's identity, its display name, its level labels from root to leaf (an
+array of strings, in the composition's order), and — OPTIONAL — the calendar its periods are counted in
+and a description object. Every OPTIONAL member here is **omitted when the composition states none**
+(§4.5): its absence is a statement that there is nothing to state, never a value to substitute.
+
+A **description** says what a fact table is for, or what a subject hierarchy means, as prose: `{ "text",
+"columns" }` on a fact-table entry, `{ "text", "levels" }` on a subject definition. `text` is REQUIRED.
+The entry array is OPTIONAL; each element is `{ "metric", "text" }` (a column, by the metric it carries)
+or `{ "level", "text" }` (a level, by its label), in the composition's order (§4.6). It is omitted when
+no member is described and refused when present and empty, on `factTables`' terms. The core places no
+structure on the text; whether a description may name a column or level its entry does not carry, or
+describe one twice, is a composition rule a profile states (§8.4). A description is interpretation, not
+data: a value belongs in a fact. The member is additive and the format version stays 1 (§10.1): a reader
+written before it existed ignores it (§9.3).
 
 Both members are **omitted when the unit registers none** (§4.5), and each is refused when present
 and empty (`metric-definitions-empty`, `subject-definitions-empty`), on `factTables`' terms. A member

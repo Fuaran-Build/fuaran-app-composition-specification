@@ -89,13 +89,32 @@
       },
       "required": ["id", "name", "unit", "dimensionality", "direction", "displayFormat", "staleness"]
     },
+    "description": {
+      "type": "object",
+      "properties": {
+        "text": { "type": "string" },
+        "columns": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/describedMember" } },
+        "levels": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/describedMember" } }
+      },
+      "required": ["text"]
+    },
+    "describedMember": {
+      "type": "object",
+      "properties": {
+        "metric": { "type": "string" },
+        "level": { "type": "string" },
+        "text": { "type": "string" }
+      },
+      "required": ["text"]
+    },
     "subjectDefinition": {
       "type": "object",
       "properties": {
         "id": { "type": "string" },
         "name": { "type": "string" },
         "levels": { "type": "array", "items": { "type": "string" } },
-        "calendar": { "type": "string" }
+        "calendar": { "type": "string" },
+        "description": { "$ref": "#/$defs/description" }
       },
       "required": ["id", "name", "levels"]
     },
@@ -187,7 +206,8 @@
                 "subjects": { "type": "array", "items": { "type": "string" } },
                 "metrics": { "type": "array", "items": { "type": "string" } },
                 "grains": { "type": "array", "items": { "$ref": "#/$defs/profileToken" } },
-                "definition": { "$ref": "#/$defs/factDefinition" }
+                "definition": { "$ref": "#/$defs/factDefinition" },
+                "description": { "$ref": "#/$defs/description" }
               },
               "required": ["id", "subjects", "metrics", "grains"]
             }
