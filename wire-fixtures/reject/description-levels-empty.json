@@ -1,0 +1,1 @@
+{"kind":"appRoot","base":"serverApp","layers":[],"id":"reject-description-levels-empty","children":[{"kind":"moduleRef","view":"bareFeliz","subjectDefinitions":[{"id":"s","name":"S","levels":["a"],"description":{"text":"x","levels":[]}}],"id":"Unit","children":[]}]}

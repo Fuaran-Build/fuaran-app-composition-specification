@@ -1,0 +1,1 @@
+{"kind":"appRoot","base":"serverApp","layers":[],"id":"reject-member-absent-subject-description-level-text","children":[{"kind":"moduleRef","view":"bareFeliz","subjectDefinitions":[{"id":"s","name":"S","levels":["a"],"description":{"text":"x","levels":[{"level":"a"}]}}],"id":"Unit","children":[]}]}

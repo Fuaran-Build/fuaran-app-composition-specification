@@ -1,0 +1,1 @@
+{"kind":"appRoot","base":"serverApp","layers":[],"id":"reject-member-absent-fact-table-description-text","children":[{"kind":"moduleRef","view":"bareFeliz","factTables":[{"id":"t","subjects":["s"],"metrics":["m"],"grains":["day"],"description":{"columns":[{"metric":"m","text":"x"}]}}],"id":"Unit","children":[]}]}

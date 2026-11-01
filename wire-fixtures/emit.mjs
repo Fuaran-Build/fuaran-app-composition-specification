@@ -129,6 +129,24 @@ const definition = (d) =>
         ["requirement", str(d.requirement)],
       ]);
 
+// §5.4 — a description: the text, then the described members in the
+// composition's order, the array omitted when no member is described.
+const description = (d, entriesMember, keyMember) =>
+  d == null
+    ? null
+    : obj([
+        ["text", str(d.text)],
+        [
+          entriesMember,
+          nonEmpty(d[entriesMember], (e) =>
+            obj([
+              [keyMember, str(e[keyMember])],
+              ["text", str(e.text)],
+            ]),
+          ),
+        ],
+      ]);
+
 const factTable = (t) =>
   obj([
     ["id", str(t.id)],
@@ -136,6 +154,7 @@ const factTable = (t) =>
     ["metrics", arr(t.metrics.map(str))],
     ["grains", arr(t.grains.map(str))],
     ["definition", definition(t.definition)],
+    ["description", description(t.description, "columns", "metric")],
   ]);
 
 // §5.4 — the definitions a unit registers.
@@ -184,6 +203,7 @@ const subjectDefinition = (d) =>
     ["name", str(d.name)],
     ["levels", arr(d.levels.map(str))],
     ["calendar", optStr(d.calendar)],
+    ["description", description(d.description, "levels", "level")],
   ]);
 
 /** An EMPTY list is omitted, never spelled `[]` (§5.4). */
@@ -1170,6 +1190,85 @@ const documents = {
       factTables: [],
       metricDefinitions: [],
       subjectDefinitions: [{ id: "geo", name: "Geography", levels: [], calendar: null }],
+    }),
+  ]),
+
+  // Stated with its members, with its text alone (the empty array OMITTED),
+  // and not at all, which is a table as it always was. The member follows
+  // `definition`, and the columns keep the composition's order, not the
+  // table's and not a sorted one.
+  "node/module-ref-fact-table-description": root("node-module-ref-fact-table-description", "serverApp", [], [
+    leaf("Trading", "moduleRef", {
+      view: "bareFeliz",
+      factTables: [
+        {
+          description: {
+            columns: [
+              { text: "Net of returns.", metric: "revenue" },
+              { metric: "orders", text: "Placed, not delivered." },
+            ],
+            text: "Daily trading by shopper type.",
+          },
+          definition: {
+            requirement: "required",
+            disclosure: { policy: null, class: "internal" },
+            columns: [
+              { shape: "scalar", metric: "orders", disclosure: null },
+              { shape: "scalar", metric: "revenue", disclosure: null },
+            ],
+            refreshCadenceSeconds: 86400,
+            level: "shopperType",
+            historyMode: "appendByRun",
+            producingOperation: "trade.daily.load",
+            periodGrain: "day",
+            hierarchy: "trade",
+            schemaVersion: 1,
+          },
+          grains: ["day"],
+          metrics: ["orders", "revenue"],
+          subjects: ["trade"],
+          id: "trade.daily",
+        },
+        {
+          description: { columns: [], text: "Weekly trading, for the board." },
+          grains: ["week"],
+          metrics: ["revenue"],
+          subjects: ["trade"],
+          id: "trade.weekly",
+        },
+        { grains: ["month"], metrics: ["revenue"], subjects: ["trade"], id: "trade.monthly" },
+      ],
+    }),
+  ]),
+
+  // The same three statements on a subject definition: the member follows
+  // `calendar`, and the levels keep the composition's order.
+  "node/module-ref-subject-description": root("node-module-ref-subject-description", "serverApp", [], [
+    leaf("Trading", "moduleRef", {
+      view: "bareFeliz",
+      subjectDefinitions: [
+        {
+          description: {
+            levels: [
+              { text: "A shopper segment.", level: "shopperType" },
+              { level: "site", text: "One physical store." },
+            ],
+            text: "Sites, markets and shopper types.",
+          },
+          calendar: "fiscal-445",
+          levels: ["site", "market", "shopperType"],
+          name: "Trading",
+          id: "trade",
+        },
+        {
+          description: { levels: [], text: "Countries and regions." },
+          calendar: null,
+          levels: ["country", "region"],
+          name: "Geography",
+          id: "geo",
+        },
+        { calendar: null, levels: ["channel"], name: "Channel", id: "channel" },
+      ],
     }),
   ]),
 
@@ -3445,6 +3544,16 @@ if (selfTest) {
   if (withClient.includes('"client"') === withoutClient.includes('"client"')) {
     console.error("self-test FAILED: the optional client band is spelled the same way present and absent (§4.5)");
     process.exit(1);
+  }
+  // And prove a description's empty array is omitted, not written (§5.4).
+  for (const [id, member] of [
+    ["node/module-ref-fact-table-description", '"columns":[]'],
+    ["node/module-ref-subject-description", '"levels":[]'],
+  ]) {
+    if (node(documents[id]).includes(member)) {
+      console.error(`self-test FAILED: ${id} spells an empty ${member} a reader must refuse (§5.4)`);
+      process.exit(1);
+    }
   }
   // And prove §12.7's encoder guard is live: a model whose refresh
   // class no longer matches what its own content resolves to must be

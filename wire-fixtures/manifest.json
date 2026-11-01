@@ -660,6 +660,26 @@
       "description": "A unit stating its fact table in full - the definition, a column overriding the table's disclosure and one inheriting it, a metric with every optional member and one with none, a hierarchy with a calendar - beside a unit registering only a hierarchy, its empty tables and metrics OMITTED. The optional members are the load-bearing half: an emitter that writes them unconditionally reproduces the full metric and fails on the bare one."
     },
     {
+      "id": "node/module-ref-fact-table-description",
+      "family": "node",
+      "profile": "core",
+      "home": "core",
+      "kind": "round-trip",
+      "file": "node/module-ref-fact-table-description.json",
+      "sha256": "780967243633099051f7a91e2709b1a57537804b54948c6046d0aae637b15b64",
+      "description": "Three fact tables: one described with its columns after its definition, the columns in the composition's order; one described by its text alone, its empty columns OMITTED; one undescribed. The last two are the load-bearing half: an emitter that writes the array or the member unconditionally reproduces the first and fails on them."
+    },
+    {
+      "id": "node/module-ref-subject-description",
+      "family": "node",
+      "profile": "core",
+      "home": "core",
+      "kind": "round-trip",
+      "file": "node/module-ref-subject-description.json",
+      "sha256": "2d601c93953231127bf5cf9648bb431f3318833ca89f7cb0d64e4673141f31bd",
+      "description": "Three subject hierarchies: one described with its levels after its calendar, the levels in the composition's order; one described by its text alone, its empty levels OMITTED; one undescribed."
+    },
+    {
       "id": "node/module-ref-entities",
       "family": "node",
       "profile": "core",
@@ -1102,6 +1122,54 @@
       "reject": "subject-definitions-empty",
       "detect": "codec",
       "description": "A subjectDefinitions member present and empty. 'This unit registers no subject hierarchy' has one spelling, the omitted member."
+    },
+    {
+      "id": "reject/description-columns-empty",
+      "family": "reject",
+      "profile": "core",
+      "home": "core",
+      "kind": "reject",
+      "file": "reject/description-columns-empty.json",
+      "sha256": "96aae09bbc5bc1337ddcb66e443299375198921ba299b483a410188919a36354",
+      "reject": "description-columns-empty",
+      "detect": "codec",
+      "description": "A fact-table description's columns member present and empty. 'No column is described' has one spelling, the omitted member."
+    },
+    {
+      "id": "reject/description-levels-empty",
+      "family": "reject",
+      "profile": "core",
+      "home": "core",
+      "kind": "reject",
+      "file": "reject/description-levels-empty.json",
+      "sha256": "eb59a8cbd62baab2097e560eb1533019b6041f31147a50d15579be9c3fdbef58",
+      "reject": "description-levels-empty",
+      "detect": "codec",
+      "description": "A subject description's levels member present and empty. 'No level is described' has one spelling, the omitted member."
+    },
+    {
+      "id": "reject/member-absent-fact-table-description-text",
+      "family": "reject",
+      "profile": "core",
+      "home": "core",
+      "kind": "reject",
+      "file": "reject/member-absent-fact-table-description-text.json",
+      "sha256": "33f56ebbe6355255060cdd014985609b3fd52ab059976a01cb54090514bb654c",
+      "reject": "member-absent",
+      "detect": "codec",
+      "description": "A fact-table description with no text. Its columns cannot stand in for it: a column's description is stated under its table's, never instead of it."
+    },
+    {
+      "id": "reject/member-absent-subject-description-level-text",
+      "family": "reject",
+      "profile": "core",
+      "home": "core",
+      "kind": "reject",
+      "file": "reject/member-absent-subject-description-level-text.json",
+      "sha256": "b1a7cc46ea51fd2fd3d6cfc4d42866c25bbf55853d0fe637664d3b908df513ef",
+      "reject": "member-absent",
+      "detect": "codec",
+      "description": "A described level with no text. An entry that says nothing has one spelling, no entry."
     },
     {
       "id": "reject/member-absent-fact-definition-requirement",

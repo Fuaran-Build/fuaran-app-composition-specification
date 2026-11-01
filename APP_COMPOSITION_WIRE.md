@@ -583,8 +583,8 @@ A **description** says what a fact table is for, or what a subject hierarchy mea
 "columns" }` on a fact-table entry, `{ "text", "levels" }` on a subject definition. `text` is REQUIRED.
 The entry array is OPTIONAL; each element is `{ "metric", "text" }` (a column, by the metric it carries)
 or `{ "level", "text" }` (a level, by its label), in the composition's order (§4.6). It is omitted when
-no member is described and refused when present and empty, on `factTables`' terms. The core places no
-structure on the text; whether a description may name a column or level its entry does not carry, or
+no member is described and refused when present and empty (`description-columns-empty`,
+`description-levels-empty`), on `factTables`' terms. The core places no structure on the text; whether a description may name a column or level its entry does not carry, or
 describe one twice, is a composition rule a profile states (§8.4). A description is interpretation, not
 data: a value belongs in a fact. The member is additive and the format version stays 1 (§10.1): a reader
 written before it existed ignores it (§9.3).
@@ -1166,6 +1166,8 @@ implementation cannot claim an obligation by meeting a different one.
 | `fact-tables-empty` | A `factTables` member present and empty. | §5.4 |
 | `metric-definitions-empty` | A `metricDefinitions` member present and empty. | §5.4 |
 | `subject-definitions-empty` | A `subjectDefinitions` member present and empty. | §5.4 |
+| `description-columns-empty` | A fact-table description's `columns` member present and empty. | §5.4 |
+| `description-levels-empty` | A subject description's `levels` member present and empty. | §5.4 |
 | `entities-empty` | An `entities` member present and empty. | §5.4 |
 | `entity-fields-empty` | An owned entity's `fields` member present and empty. | §5.4 |
 | `disclosure-policies-empty` | A `disclosurePolicies` member present and empty. | §5.4 |
