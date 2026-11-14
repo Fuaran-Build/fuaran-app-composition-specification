@@ -884,6 +884,17 @@
       "description": "The escapes a reader must accept and a writer must never emit. A reader that refuses these will refuse documents produced by any ordinary JSON library, which is most of them."
     },
     {
+      "id": "accept/node-depth-at-limit",
+      "family": "accept",
+      "profile": "core",
+      "home": "core",
+      "kind": "accept",
+      "file": "accept/node-depth-at-limit.json",
+      "sha256": "f82df1f227873bf0dc42dbc3cdc4a0d0e15e12586db80c8a788cfe2119addcd8",
+      "interpretation": "Read as a root holding a chain of 23 nested data types, 24 nodes deep counting the root, which is exactly the node-depth limit. The document must not be refused (section 9.5): the limit is the deepest depth admitted, not the first one refused. A profile whose containment rules refuse a data type inside a data type refuses it under those rules, which is a different layer and a different class.",
+      "description": "The limit from below. Paired with reject/limit-exceeded-node-depth, which is the same chain one node deeper: a reader that refuses at the limit fails this one, and a reader that never refuses fails that one."
+    },
+    {
       "id": "reject/document-malformed",
       "family": "reject",
       "profile": "core",
@@ -1374,6 +1385,18 @@
       "reject": "project-duplicate",
       "detect": "codec",
       "description": "A root declaring the same project path twice, apart. Each path is named once (section 5.1): an evaluator lists every entry in the solution it builds, and a solution naming one project twice is one no build tool loads, so the repetition is refused rather than silently collapsed."
+    },
+    {
+      "id": "reject/limit-exceeded-node-depth",
+      "family": "reject",
+      "profile": "core",
+      "home": "core",
+      "kind": "reject",
+      "file": "reject/limit-exceeded-node-depth.json",
+      "sha256": "b14195551cfe46188f89d3b485eeb3b37e8cbe50bc7a649cc5de9f0c8fdfeb15",
+      "reject": "limit-exceeded",
+      "detect": "codec",
+      "description": "The same chain as accept/node-depth-at-limit, one node deeper: 25 nodes counting the root, one past the node-depth limit (section 9.5). Well-formed and refused for its depth, not its shape, and refused before the decoder descends past the limit rather than by exhausting it."
     },
     {
       "id": "kill-and-replay/lost-in-flight",

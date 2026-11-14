@@ -136,7 +136,7 @@ A profile MUST NOT:
 
 - change the canonical encoding (§4), which is the core's alone;
 - remove or re-shape a core node kind's members;
-- weaken a refusal class §9 marks `core`;
+- weaken a refusal class §9 marks `core`, or change a resource limit's figure (§9.5);
 - register a token vocabulary for a slot the core states is opaque (§5.4 `impl`), or constrain the
   `value` of a `configKnob` whose `key` it does not recognise (§5.8).
 
@@ -1180,6 +1180,7 @@ implementation cannot claim an obligation by meeting a different one.
 | `extension-field-too-long` | A field value over the declared length. | §7.3 |
 | `extension-field-duplicate` | A repeated field name. | §7.3 |
 | `extension-not-leaf` | An `extensionRef` with children. | §3.4 |
+| `limit-exceeded` | A well-formed document past a resource limit §9.5 states. | §9.5 |
 
 ### §9.2 Profile classes
 
@@ -1227,6 +1228,40 @@ A class here is refused by whichever implementations claim a facet value the cla
 (§11.3), and by no others. A `core` reader that never runs anything owes none of them, which is the
 same boundary §2.1 draws one layer down.
 
+### §9.5 Resource limits
+
+A reader decodes documents of unbounded size with bounded resources, so some well-formed documents
+are documents no reader can be relied on to read. A **resource limit** names one such quantity and a
+figure for it, and it makes two promises at once:
+
+- a reader MUST accept every document within the limit, so a writer that stays inside it is read by
+  every conformant reader; and
+- a reader MUST refuse a document past the limit, whole (§9), with the class `limit-exceeded`.
+
+A reader MUST make that refusal **before it descends past the limit**. A document past a limit is
+refused with a named class, never by exhausting the reader's own resources: a reader whose recursion
+would fail first does not meet the limit, however rarely such a document arrives, because a refusal
+that takes the reader down with it is not one its caller can act on.
+
+`limit-exceeded` says nothing about the document's shape. A refusal under it SHOULD name the
+quantity, the limit and the observed value, and SHOULD say that the document was refused for its
+size rather than for being malformed: an author handed a malformedness class looks for an error that
+is not there.
+
+| Quantity | Limit | Counted as |
+|---|---|---|
+| Node depth | 24 | The number of nodes on the longest path from the root to a leaf, the root counting as 1. A root with no children has depth 1; a root whose children are all leaves has depth 2. |
+
+The node-depth figure is roughly eight times the depth of the deepest composition in the corpus, and
+no containment rule of the core (§3.4) admits a shape that needs more. The figure is the format's,
+not a profile's: a profile MUST NOT raise or lower it (§2.3 — lowering one weakens what a writer may
+rely on, and raising one weakens a refusal the core states). A profile whose containment rules admit
+only shallower trees refuses those documents under its own rules, as it would at any depth.
+
+The corpus carries the limit at both edges: an `accept` vector at exactly the limit, and a `reject`
+vector one past it. Both are needed — a reader that refuses at the limit, or one that never refuses,
+each passes one of them.
+
 ---
 
 ## §10. Versioning and change
@@ -1239,6 +1274,7 @@ Additive, and does **not** move the format version:
 - adding an extension declaration to the registry (§7.4);
 - registering a profile, or a token in a profile's vocabulary;
 - adding a refusal class for a document that was already ill-formed;
+- stating a resource limit (§9.5) at a figure far above every document the corpus carries;
 - adding a corpus vector, or a reserved family name;
 - registering a facet axis or value, a conformance family, or a profile's facet declaration (§11,
   §12);
@@ -1256,6 +1292,13 @@ previously make. A stack rung is the same argument one level out and §2.4 is wh
 rung obliges only an implementation that claims it, so registering one leaves every existing
 conformance claim exactly where it stood.
 
+A resource limit is the one entry that refuses documents which were well-formed, and it is additive
+for a narrower reason than the others. Its figure sits far above any depth a composition is written
+at, so no document anybody writes moves from read to refused; and the documents that do move are ones
+a reader without the limit could not be relied on to read at all. What the limit changes is how such a
+document fails — by a named class rather than by the reader's own exhaustion — and a reader at this
+version that meets one keeps working on every other. Changing a stated figure is not additive (§10.2).
+
 ### §10.2 Breaking
 
 Breaking, and takes a new format version:
@@ -1263,7 +1306,8 @@ Breaking, and takes a new format version:
 - changing an existing member's meaning, type, presence or position in declaration order;
 - changing the canonical encoding (§4);
 - removing or re-tagging a node kind;
-- narrowing a core vocabulary.
+- narrowing a core vocabulary;
+- changing the figure of a resource limit (§9.5), in either direction.
 
 Every such change alters bytes that a content address was computed over, and an identity that changed
 for a reason a reader cannot see splits an evidence base in two silently. A reader MUST refuse a
@@ -2016,6 +2060,9 @@ Ordered by how often each item is the thing that is wrong.
     a work measure must not do — and it reads as correct until two pipelines are compared. It is one
     scale, so a `fullRecompute` is counted on it as well; reading a declined evaluation's cost off
     `sourceRows` makes it compare as having done less work than the full evaluation it fell back to.
+15. **Check the depth limit before descending, not after** (§9.5). A recursive decoder that counts
+    depth on the way back up has already spent the stack the limit exists to protect. Accept at
+    exactly 24 and refuse at 25, with `limit-exceeded` rather than a malformedness class.
 
 ---
 
